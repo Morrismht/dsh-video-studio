@@ -397,11 +397,48 @@ class Catalog {
     }
     const series = [...groups.values()].filter((g) => g.styles.length > 0)
     for (const group of series) group.count = group.styles.length
+    await this.attachUnindexedStills(series)
+    let stills = 0
+    for (const group of series) for (const style of group.styles) if (style.image) stills += 1
     return {
       source: 'catalog.json',
       total: entries.length,
-      withStill: Number(parsed.with_still ?? entries.filter((e) => e.image).length),
+      withStill: stills,
       series
+    }
+  }
+
+  /** The upstream catalog.json only wires a still into some entries; several series
+   *  ship the JPGs on disk without listing them (K1–K6 are exactly that case). Look
+   *  them up per series directory so the grid can show every still the repo has. */
+  async attachUnindexedStills(series) {
+    for (const group of series) {
+      if (!group.styles.some((style) => !style.image)) continue
+      const sample = group.styles.find((style) => style.file)
+      if (!sample) continue
+      const dirRel = dirname(String(sample.file).replaceAll('\\', '/'))
+      let names = []
+      try {
+        names = await readdir(join(this.skillDir, ...dirRel.split('/')))
+      } catch {
+        continue
+      }
+      const byId = new Map()
+      for (const fileName of names) {
+        if (!/\.(jpe?g|png|webp|gif)$/i.test(fileName)) continue
+        const matched = /^([A-Za-z]+\d+)[_.-]/.exec(fileName)
+        if (!matched) continue
+        const key = matched[1].toUpperCase()
+        if (!byId.has(key)) byId.set(key, dirRel + '/' + fileName)
+      }
+      if (byId.size === 0) continue
+      for (const style of group.styles) {
+        if (style.image) continue
+        const rel = byId.get(String(style.entryId).toUpperCase())
+        if (!rel) continue
+        style.image = true
+        style.imagePath = rel
+      }
     }
   }
 

@@ -293,7 +293,8 @@ const EXTRA_DICT = {
     'learn.detailLoading': '正在读取这个风格的详情…',
     'learn.detailFail': '详情读取失败',
     'learn.promptBtn': '提示词参考 →',
-    'learn.collapse': '收起'
+    'learn.collapse': '收起',
+    'card.noStill': '无参考静帧'
   },
   en: {
     'top.studio': 'Studio',
@@ -321,7 +322,8 @@ const EXTRA_DICT = {
     'learn.detailLoading': 'Loading this style…',
     'learn.detailFail': 'Could not load this style',
     'learn.promptBtn': 'Prompt reference →',
-    'learn.collapse': 'Collapse'
+    'learn.collapse': 'Collapse',
+    'card.noStill': 'No still'
   }
 }
 Object.assign(DICT.zh, EXTRA_DICT.zh)
@@ -413,7 +415,9 @@ const CSS = `
 .vs-card-check{position:absolute;right:7px;top:7px;z-index:2;width:17px;height:17px;border-radius:50%;background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-size:11px;line-height:17px;text-align:center;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.25);}
 .vs-thumb{height:132px;background:var(--dsw-alias-bg-skeleton,#eef1f7);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
 .vs-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.vs-thumb-none{color:var(--dsw-alias-label-caption,#929bad);font-size:11px;font-weight:700;}
+.vs-thumb-none{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--dsw-alias-label-caption,#929bad);font-size:11px;font-weight:700;}
+.vs-thumb-none b{font-size:20px;font-weight:700;letter-spacing:.02em;color:var(--dsw-alias-border-l4,#d7dbe0);}
+.vs-thumb-none i{font-style:normal;font-size:10.5px;font-weight:500;color:var(--dsw-alias-label-caption,#929bad);}
 .vs-card-badge{position:absolute;left:6px;top:6px;background:rgba(17,24,39,.72);color:#fff;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;letter-spacing:.02em;}
 .vs-card-body{height:106px;box-sizing:border-box;padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden;}
 .vs-card-title{font-size:14px;font-weight:600;line-height:1.4;max-height:2.8em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
@@ -1308,8 +1312,10 @@ window.__ModuleLoader__.load({
                     h('div', { className: 'vs-thumb' },
                       s.image
                         ? h('img', { src: imageUrl(s.id), alt: s.title, loading: 'lazy' })
-                        : h('span', { className: 'vs-thumb-none' }, s.category || s.name.slice(0, 6)),
-                      h('span', { className: 'vs-card-badge' }, s.name)),
+                        : h('span', { className: 'vs-thumb-none' },
+                          h('b', null, s.entryId),
+                          h('i', null, t('card.noStill'))),
+                      h('span', { className: 'vs-card-badge' }, s.entryId)),
                     h('div', { className: 'vs-card-body' },
                       h('div', { className: 'vs-card-title' }, s.title || s.name),
                       s.head ? h('div', { className: 'vs-card-desc' }, s.head) : null),
