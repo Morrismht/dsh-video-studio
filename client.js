@@ -53,6 +53,7 @@ const DICT = {
     'params.promptReset': '恢复风格模板',
     'params.promptClear': '清空（用风格原文）',
     'params.chars': '字',
+    'params.promptEdited': '已修改',
     'confirm.promptEdit': '最终提示词（提交前还能改）',
     'confirm.promptHint': '这一整段就是要发给对话的内容，可以直接在这里改完再提交。',
     'params.extraPh': '例如：主色 #E5432B、结尾出 Logo、右上角放二维码',
@@ -186,6 +187,7 @@ const DICT = {
     'params.promptReset': 'Restore style template',
     'params.promptClear': 'Clear (use original)',
     'params.chars': 'chars',
+    'params.promptEdited': 'edited',
     'confirm.promptEdit': 'Final prompt (still editable)',
     'confirm.promptHint': 'This whole block is what gets sent to the conversation — tweak it before submitting.',
     'params.extraPh': 'e.g. accent #E5432B, logo at the end, QR code top-right',
@@ -1122,7 +1124,7 @@ window.__ModuleLoader__.load({
           }, t('params.promptClear')),
           h('span', { className: 'vs-hint', style: { marginLeft: 'auto' } },
             String(tplEdit.trim().length) + ' ' + t('params.chars') +
-              (tplTouched ? ' · ' + t('params.promptGroup') : ''))),
+              (tplTouched ? ' · ' + t('params.promptEdited') : ''))),
 
         estimate
           ? h('div', { className: 'vs-est' },
@@ -1467,7 +1469,6 @@ window.__ModuleLoader__.load({
                   styleSel ? h('span', { className: 'vs-tag' }, styleSel) : null,
                   estimate ? h('span', { className: 'vs-tag', style: { fontWeight: 700 } }, estimateLine) : null),
                 warnings.map((w) => h('div', { key: w, className: 'vs-warn' }, w)),
-                h('div', { className: 'vs-label' }, t('style.prompt')),
                 h('div', { className: 'vs-label' }, t('confirm.promptEdit')),
                 h('textarea', {
                   className: 'vs-modal-prompt vs-modal-prompt-edit',
