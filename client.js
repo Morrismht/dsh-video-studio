@@ -463,8 +463,6 @@ const CSS = `
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .vs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-label-primary,#111827);color:#fff;padding:8px 16px;border-radius:var(--dsw-radius-md,6px);font-size:12.5px;z-index:1300;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:70vw;}
-.vs-sidebar-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:20px;height:20px;min-width:20px;min-height:20px;padding:0;margin:0;border:0;background:none;border-radius:0;color:inherit;line-height:0;vertical-align:middle;}
-.vs-sidebar-icon svg{display:block;}
 .vs-header-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;margin:0;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer;font-family:inherit;line-height:0;}
 .vs-header-btn:hover{background:var(--dsw-alias-bg-layer-2,#f3f4f6);color:var(--dsw-alias-label-primary,#111827);}
 .vs-seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-2,#f3f4f6);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
@@ -577,13 +575,84 @@ window.__ModuleLoader__.load({
           options.map((o) => h('option', { key: String(o.value), value: String(o.value) }, o.label))))
     }
 
-    function SidebarIcon() {
-      // Match the shipped panel icons: a bare line glyph in the inherited colour.
-      // Fixed 20×20 box regardless of the props the owner passes, so the glyph can
-      // never grow/shrink or drift when the entry becomes active.
-      return h('span', { className: 'vs-sidebar-icon' }, h(ClapperIcon, { size: 20 }))
-    }
+    // The shell owns the row box, its padding, the tooltip and the active highlight;
+    // a panel entry only draws the glyph. Draw it the way the shipped entries do:
+    // one bare <svg> at exactly the edge the shell asks for (16 wide / 18 in the rail).
+    // A wrapper element inherits the row's line box, so it can drift when the shell
+    // re-renders the row; a bare svg cannot. The geometry probe below ships the row
+    // and glyph rectangles to action=diag, so any remaining shift is measured rather
+    // than guessed at.
+    function SidebarIcon(props) {
+      const own = props || {}
+      const edge = typeof own.size === 'number' && own.size > 0 ? own.size : 16
+      const holder = React.useRef(null)
 
+      const box = (el) => {
+        if (!el || !el.getBoundingClientRect) return null
+        const r = el.getBoundingClientRect()
+        return { t: Math.round(r.top * 10) / 10, h: Math.round(r.height * 10) / 10 }
+      }
+
+      React.useEffect(() => {
+        try {
+          const node = holder.current
+          if (!node) return undefined
+          const samples = []
+          let sent = false
+          const grab = (tag) => {
+            const row = (node.closest && node.closest('button')) || node.parentElement
+            const list = row && row.parentElement
+            const siblings = list ? Array.from(list.children).map((child) => box(child)) : []
+            const rail = node.closest ? node.closest('[class*="collapsed"]') : null
+            samples.push({
+              tag,
+              active: !!own.active,
+              size: own.size == null ? null : own.size,
+              row: box(row),
+              glyph: box(node),
+              list: box(list),
+              scrollTop: list ? Math.round(list.scrollTop || 0) : null,
+              collapsed: !!rail,
+              siblings
+            })
+          }
+          const flush = () => {
+            if (sent) return
+            sent = true
+            try {
+              const studio = own.studio
+              if (studio && typeof studio.rpc === 'function') {
+                Promise.resolve(studio.rpc('diag', { where: 'sidebar', samples, viewport: window.innerWidth + 'x' + window.innerHeight })).catch(() => {})
+              }
+            } catch {}
+          }
+          grab('t0')
+          const timers = [90, 300, 900].map((ms) => setTimeout(() => { grab('t' + ms); if (ms === 900) flush() }, ms))
+          return () => { timers.forEach((handle) => clearTimeout(handle)); flush() }
+        } catch { return undefined }
+      }, [own.active, own.size])
+
+      return h('svg', {
+        ref: holder,
+        'data-dsh-panel-entry': PANEL_ID,
+        viewBox: '0 0 16 16',
+        width: edge,
+        height: edge,
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: 1.3,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        'aria-hidden': 'true',
+        style: { display: 'block', flex: '0 0 auto' }
+      },
+      h('path', { key: 'band', d: 'M2.2 3.2 13.8 4 13.8 6.3 2.2 6.3Z' }),
+      h('path', { key: 's1', d: 'M4.7 3.45 4.6 6.3' }),
+      h('path', { key: 's2', d: 'M7.6 3.72 7.5 6.3' }),
+      h('path', { key: 's3', d: 'M10.5 4 10.4 6.3' }),
+      h('rect', { key: 'body', x: 2.2, y: 6.3, width: 11.6, height: 6.3, rx: 1.2 }),
+      h('path', { key: 'play', d: 'M6.9 8.1v3.2l2.9-1.6Z', fill: 'currentColor', stroke: 'none' }))
+    }
     function HeaderToggle({ openStudio, label }) {
       // Icon only — the shell's neighbours ("expand sidebar", "expand bottom panel")
       // are the same pattern: a glyph plus the native title tooltip.
@@ -1475,7 +1544,17 @@ window.__ModuleLoader__.load({
               StudioPanel)
             const stopIcon = ctx.slots.register(
               // Sit at the very top of the panel list, above every shipped entry.
-              { name: 'sidebar.panellist', id: PANEL_ID, order: -50, label: () => translate('panel.title'), locale: NS },
+              {
+                name: 'sidebar.panellist',
+                id: PANEL_ID,
+                order: -50,
+                label: () => translate('panel.title'),
+                locale: NS,
+                inject: (own) => {
+                  const share = own || {}
+                  return { size: share.size, active: share.active, studio }
+                }
+              },
               SidebarIcon)
             const stopHeader = ctx.slots.inject('conversation.session.header.utilities', () =>
               ctx.slots.register(

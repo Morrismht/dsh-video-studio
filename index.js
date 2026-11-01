@@ -937,6 +937,9 @@ export function apply(ctx, config = {}) {
   // client bundle really mounted (a silent client failure looks identical to a
   // user who simply cannot find the entry).
   let clientDiag = null
+  // Latest-first ring of client reports, so a geometry probe that fires on mount,
+  // on every activation and on unmount can be read back as a timeline.
+  const clientDiagHistory = []
 
   const buildComposed = async (styleId, topic, script, params, extra) => {
     let style = null
@@ -991,7 +994,9 @@ export function apply(ctx, config = {}) {
               return ok(await buildLearn(catalog))
             case 'diag':
               clientDiag = { at: Date.now(), ...(payload && typeof payload === 'object' ? payload : {}) }
-              return ok({ clientDiag, hostState })
+              clientDiagHistory.push(clientDiag)
+              if (clientDiagHistory.length > 30) clientDiagHistory.splice(0, clientDiagHistory.length - 30)
+              return ok({ clientDiag, history: clientDiagHistory.slice(-30), hostState })
             case 'style':
               return ok(await catalog.readStyle(payload.id))
             case 'image':
@@ -1214,7 +1219,12 @@ export function apply(ctx, config = {}) {
           }
         }
         case 'diag': {
-          const base = {
+          const timeline = clientDiagHistory.slice(-8).map((entry) => ({
+            at: new Date(entry.at).toLocaleTimeString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+            where: entry.where ?? null,
+            samples: entry.samples ?? null
+          }))
+          return {
             hostState,
             clientMount: clientDiag
               ? {
@@ -1222,9 +1232,9 @@ export function apply(ctx, config = {}) {
                   reportedAt: new Date(clientDiag.at).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
                   ...clientDiag
                 }
-              : { mounted: false, hint: '浏览器端还没有向插件后端报到：页面没重新加载，或 client.js 没有执行。请刷新页面（Ctrl+R）。' }
+              : { mounted: false, hint: '浏览器端还没有向插件后端报到：页面没重新加载，或 client.js 没有执行。请刷新页面（Ctrl+R）。' },
+            timeline
           }
-          return base
         }
         default:
           throw new Error(`未知 action：${args.action}`)
