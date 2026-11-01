@@ -289,7 +289,11 @@ const EXTRA_DICT = {
     'learn.applyHint': '已套用这个案例的风格与参数，把主题改成你自己的就能生成。',
     'learn.openFull': '打开完整提示词',
     'learn.videoHint': '成片直接在本页播放（来自仓库示例文件夹）',
-    'learn.viewAll': '看这一类全部'
+    'learn.viewAll': '看这一类全部',
+    'learn.detailLoading': '正在读取这个风格的详情…',
+    'learn.detailFail': '详情读取失败',
+    'learn.promptBtn': '提示词参考 →',
+    'learn.collapse': '收起'
   },
   en: {
     'top.studio': 'Studio',
@@ -313,7 +317,11 @@ const EXTRA_DICT = {
     'learn.applyHint': 'Style and parameters applied — change the topic and generate.',
     'learn.openFull': 'Open the full prompt',
     'learn.videoHint': 'Played inline from the repository examples folder',
-    'learn.viewAll': 'See all in this category'
+    'learn.viewAll': 'See all in this category',
+    'learn.detailLoading': 'Loading this style…',
+    'learn.detailFail': 'Could not load this style',
+    'learn.promptBtn': 'Prompt reference →',
+    'learn.collapse': 'Collapse'
   }
 }
 Object.assign(DICT.zh, EXTRA_DICT.zh)
@@ -396,17 +404,20 @@ const CSS = `
 .vs-search-clear{position:absolute;right:6px;border:none;background:transparent;color:var(--dsw-alias-label-caption,#929bad);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;}
 .vs-count{color:var(--dsw-alias-label-tertiary,#6b7280);font-size:11.5px;white-space:nowrap;}
 .vs-toggle{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer;white-space:nowrap;}
-.vs-grid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:10px;padding:12px;align-content:start;box-sizing:border-box;}
-.vs-card{display:flex;flex-direction:column;padding:0;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);background:var(--dsw-alias-bg-layer-2,#fff);cursor:pointer;font-family:inherit;text-align:left;overflow:hidden;color:inherit;}
-.vs-card:hover{border-color:var(--dsw-alias-brand-primary,#4c78ff);}
-.vs-card.on{border-color:var(--dsw-alias-brand-primary,#4c78ff);box-shadow:0 0 0 1px var(--dsw-alias-brand-primary,#4c78ff) inset;}
+.vs-grid{flex:1;min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:13px;padding:14px;align-content:start;box-sizing:border-box;}
+.vs-card{position:relative;display:flex;flex-direction:column;padding:0;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:8px;background:var(--dsw-alias-bg-layer-2,#fff);cursor:pointer;font-family:inherit;text-align:left;overflow:hidden;color:inherit;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,opacity .16s ease,filter .16s ease;}
+.vs-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(17,24,39,.10);border-color:var(--dsw-alias-brand-primary,#4c78ff);}
+.vs-grid.has-sel .vs-card:not(.on){opacity:.5;filter:saturate(.7);}
+.vs-grid.has-sel .vs-card:not(.on):hover{opacity:.92;filter:none;}
+.vs-card.on{border-color:var(--dsw-alias-brand-primary,#4c78ff);box-shadow:0 8px 22px rgba(76,120,255,.26);transform:translateY(-2px) scale(1.02);opacity:1;filter:none;}
+.vs-card-check{position:absolute;right:7px;top:7px;z-index:2;width:17px;height:17px;border-radius:50%;background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-size:11px;line-height:17px;text-align:center;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.25);}
 .vs-thumb{aspect-ratio:16/10;background:var(--dsw-alias-bg-skeleton,#eef1f7);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
 .vs-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .vs-thumb-none{color:var(--dsw-alias-label-caption,#929bad);font-size:11px;font-weight:700;}
 .vs-card-badge{position:absolute;left:6px;top:6px;background:rgba(17,24,39,.72);color:#fff;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;letter-spacing:.02em;}
-.vs-card-body{padding:6px 8px 8px;display:flex;flex-direction:column;gap:2px;min-width:0;}
-.vs-card-title{font-size:12.5px;font-weight:600;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.vs-card-desc{font-size:11px;line-height:1.4;color:var(--dsw-alias-label-tertiary,#6b7280);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.vs-card-body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:3px;min-width:0;}
+.vs-card-title{font-size:13.5px;font-weight:600;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.vs-card-desc{font-size:11.8px;line-height:1.45;color:var(--dsw-alias-label-tertiary,#6b7280);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .vs-side{width:352px;flex:0 0 auto;border-left:1px solid var(--dsw-alias-border-l2,#e5e7eb);display:flex;flex-direction:column;min-height:0;background:var(--dsw-alias-bg-layer-1,#fff);}
 .vs-tabs{display:flex;gap:4px;padding:8px 10px 0;flex:0 0 auto;}
 .vs-tab{padding:5px 10px;border-radius:var(--dsw-radius-md,6px) var(--dsw-radius-md,6px) 0 0;border:1px solid transparent;border-bottom:none;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font-size:12px;cursor:pointer;font-family:inherit;}
@@ -448,7 +459,10 @@ const CSS = `
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .vs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-label-primary,#111827);color:#fff;padding:8px 16px;border-radius:var(--dsw-radius-md,6px);font-size:12.5px;z-index:1300;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:70vw;}
-.vs-sidebar-icon{display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:0;color:inherit;}
+.vs-sidebar-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:20px;height:20px;min-width:20px;min-height:20px;padding:0;margin:0;border:0;background:none;border-radius:0;color:inherit;line-height:0;vertical-align:middle;}
+.vs-sidebar-icon svg{display:block;}
+.vs-header-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;margin:0;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer;font-family:inherit;line-height:0;}
+.vs-header-btn:hover{background:var(--dsw-alias-bg-layer-2,#f3f4f6);color:var(--dsw-alias-label-primary,#111827);}
 .vs-seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-2,#f3f4f6);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-seg button{border:none;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font-size:12px;font-family:inherit;padding:4px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
 .vs-seg button.on{background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-weight:600;}
@@ -474,12 +488,25 @@ const CSS = `
 .vs-series-name{font-size:13px;font-weight:700;margin-bottom:3px;}
 .vs-series-blurb{font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-tertiary,#6b7280);}
 .vs-series-picks{flex:1;min-width:0;display:flex;gap:8px;flex-wrap:wrap;}
-.vs-pick{width:126px;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);background:var(--dsw-alias-bg-layer-2,#fff);padding:0;cursor:pointer;overflow:hidden;font-family:inherit;text-align:left;color:inherit;}
-.vs-pick:hover{border-color:var(--dsw-alias-brand-primary,#4c78ff);}
+.vs-pick{width:152px;position:relative;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:8px;background:var(--dsw-alias-bg-layer-2,#fff);padding:0;cursor:pointer;overflow:hidden;font-family:inherit;text-align:left;color:inherit;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;}
+.vs-pick:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(17,24,39,.10);border-color:var(--dsw-alias-brand-primary,#4c78ff);}
+.vs-pick.on{border-color:var(--dsw-alias-brand-primary,#4c78ff);box-shadow:0 6px 18px rgba(76,120,255,.24);transform:translateY(-2px) scale(1.03);}
 .vs-pick-thumb{aspect-ratio:16/10;background:var(--dsw-alias-bg-skeleton,#eef1f7);display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .vs-pick-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .vs-pick-thumb span{font-size:11px;font-weight:700;color:var(--dsw-alias-label-caption,#929bad);}
-.vs-pick-title{font-size:11.5px;padding:5px 7px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.vs-pick-title{font-size:12px;padding:6px 8px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.vs-series-group{padding-bottom:2px;}
+.vs-series-row.on{border-bottom-color:transparent;}
+.vs-pick-detail{margin:2px 0 14px;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:10px;background:var(--dsw-alias-bg-layer-2,#fff);padding:14px;display:flex;gap:16px;align-items:flex-start;box-shadow:0 4px 16px rgba(17,24,39,.06);animation:vs-detail-in .18s ease;}
+@keyframes vs-detail-in{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:none;}}
+.vs-pick-detail-img{flex:0 0 320px;max-width:320px;border-radius:8px;overflow:hidden;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);cursor:zoom-in;display:block;background:var(--dsw-alias-bg-skeleton,#eef1f7);padding:0;}
+.vs-pick-detail-img img{width:100%;display:block;}
+.vs-pick-detail-body{flex:1;min-width:0;}
+.vs-pick-detail-head{font-size:15px;font-weight:700;margin-bottom:3px;}
+.vs-pick-detail-sub{font-size:11.5px;color:var(--dsw-alias-label-tertiary,#6b7280);margin-bottom:9px;}
+.vs-pick-detail-kv{font-size:12.2px;line-height:1.7;color:var(--dsw-alias-label-secondary,#4b5563);margin-bottom:6px;}
+.vs-pick-detail-kv b{color:var(--dsw-alias-label-primary,#111827);margin-right:6px;font-weight:600;}
+.vs-pick-detail-foot{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap;}
 .vs-example{border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);padding:13px 15px;margin-bottom:14px;background:var(--dsw-alias-bg-layer-2,#fff);}
 .vs-example-title{font-size:14px;font-weight:700;}
 .vs-example-kicker{font-size:11.5px;color:var(--dsw-alias-brand-primary,#4c78ff);margin-bottom:7px;}
@@ -544,31 +571,23 @@ window.__ModuleLoader__.load({
           options.map((o) => h('option', { key: String(o.value), value: String(o.value) }, o.label))))
     }
 
-    function SidebarIcon(props) {
-      // Match the shipped panel icons: a bare line glyph in the inherited colour,
-      // no chip, no fill, no shadow.
-      const size = (props && (props.size || props.width)) || 20
-      return h('span', {
-        title: props && props.label,
-        className: 'vs-sidebar-icon'
-      }, h(ClapperIcon, { size: Math.round(Math.max(14, size)) }))
+    function SidebarIcon() {
+      // Match the shipped panel icons: a bare line glyph in the inherited colour.
+      // Fixed 20×20 box regardless of the props the owner passes, so the glyph can
+      // never grow/shrink or drift when the entry becomes active.
+      return h('span', { className: 'vs-sidebar-icon' }, h(ClapperIcon, { size: 20 }))
     }
 
     function HeaderToggle({ openStudio, label }) {
+      // Icon only — the shell's neighbours ("expand sidebar", "expand bottom panel")
+      // are the same pattern: a glyph plus the native title tooltip.
       return h('button', {
         type: 'button',
+        className: 'vs-header-btn',
         title: label,
         'aria-label': label,
-        onClick: () => openStudio && openStudio(),
-        style: {
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-          padding: '4px 9px', borderRadius: 999,
-          border: '1px solid var(--dsw-alias-brand-primary,rgba(76,120,255,.45))',
-          background: 'var(--dsw-alias-brand-primary-soft,rgba(76,120,255,.1))',
-          color: 'var(--dsw-alias-brand-primary,#4c78ff)',
-          cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap'
-        }
-      }, h(ClapperIcon, { size: 14 }), h('span', null, label))
+        onClick: () => openStudio && openStudio()
+      }, h(ClapperIcon, { size: 16 }))
     }
 
     // ---------- studio panel ----------
@@ -597,6 +616,9 @@ window.__ModuleLoader__.load({
       const [view, setView] = useState('studio')
       const [learn, setLearn] = useState(null)
       const [learnError, setLearnError] = useState('')
+      const [expandedPick, setExpandedPick] = useState('')
+      const [pickDetail, setPickDetail] = useState(null)
+      const [pickLoading, setPickLoading] = useState('')
       const toastTimer = React.useRef(0)
 
       // Fit the studio to whatever box the shell hands the main panel: measure the
@@ -748,6 +770,34 @@ window.__ModuleLoader__.load({
         setStyleSel(id)
         setView('studio')
         setTab('style')
+      }
+
+      // Expand a representative style inline (in the reference-library view) instead
+      // of yanking the user over to the generator: the row grows downwards and the
+      // full still + description appear right underneath the thumbnail.
+      const pickReq = React.useRef('')
+      const expandPick = async (id) => {
+        if (!id) return
+        if (expandedPick === id) {
+          pickReq.current = ''
+          setExpandedPick('')
+          setPickDetail(null)
+          return
+        }
+        pickReq.current = id
+        setExpandedPick(id)
+        setPickDetail(null)
+        setPickLoading(id)
+        try {
+          const d = await studio.rpc('style', { id })
+          if (pickReq.current === id) setPickDetail(d)
+        } catch (err) {
+          if (pickReq.current === id) {
+            setPickDetail({ error: String(err && err.message ? err.message : err) })
+          }
+        } finally {
+          if (pickReq.current === id) setPickLoading('')
+        }
       }
 
       // "Build one like this": reuse the example's style AND its video parameters.
@@ -960,6 +1010,60 @@ window.__ModuleLoader__.load({
             }, t('style.use'))))
         : h('div', { className: 'vs-empty-hint' }, t('style.none'))
 
+      // ---------- inline detail under a representative style ----------
+      const pickDetailView = (id) => {
+        if (!id || id !== expandedPick) return null
+        if (pickLoading === id || !pickDetail) {
+          return h('div', { className: 'vs-pick-detail' },
+            h('div', { className: 'vs-pick-detail-body' },
+              h('div', { className: 'vs-pick-detail-head' }, t('learn.detailLoading'))))
+        }
+        if (pickDetail.error) {
+          return h('div', { className: 'vs-pick-detail' },
+            h('div', { className: 'vs-pick-detail-body' },
+              h('div', { className: 'vs-pick-detail-head' }, t('learn.detailFail')),
+              h('div', { className: 'vs-pick-detail-kv' }, pickDetail.error)))
+        }
+        const still = pickDetail.image ? imageUrl(pickDetail.id) : ''
+        const openPrompt = () => {
+          setStyleSel(pickDetail.id)
+          setTab('style')
+          setView('studio')
+        }
+        const useIt = () => {
+          setStyleSel(pickDetail.id)
+          if (!topic.trim()) setTopic(pickDetail.title || pickDetail.name || '')
+          setTab('params')
+          setView('studio')
+        }
+        return h('div', { className: 'vs-pick-detail' },
+          still
+            ? h('button', {
+              type: 'button',
+              className: 'vs-pick-detail-img',
+              title: t('learn.openFull'),
+              onClick: () => setZoom(still)
+            }, h('img', { src: still, alt: pickDetail.name || pickDetail.id }))
+            : null,
+          h('div', { className: 'vs-pick-detail-body' },
+            h('div', { className: 'vs-pick-detail-head' }, pickDetail.name + (pickDetail.title ? ' · ' + pickDetail.title : '')),
+            h('div', { className: 'vs-pick-detail-sub' },
+              [pickDetail.id, pickDetail.seriesTitle, pickDetail.category].filter(Boolean).join(' · ')),
+            pickDetail.fit
+              ? h('div', { className: 'vs-pick-detail-kv' }, h('b', null, t('style.fit')), h('span', null, pickDetail.fit))
+              : null,
+            pickDetail.description
+              ? h('div', { className: 'vs-pick-detail-kv' }, h('b', null, t('style.desc')), h('span', null, pickDetail.description))
+              : null,
+            Array.isArray(pickDetail.tags) && pickDetail.tags.length > 0
+              ? h('div', null, pickDetail.tags.map((tag) => h('span', { key: tag, className: 'vs-tag' }, tag)))
+              : null,
+            h('div', { className: 'vs-pick-detail-foot' },
+              h('button', { type: 'button', className: 'vs-btn vs-btn-primary', onClick: openPrompt }, t('learn.promptBtn')),
+              h('button', { type: 'button', className: 'vs-btn', onClick: useIt }, t('learn.useStyle')),
+              h('button', { type: 'button', className: 'vs-btn', onClick: () => expandPick(id) }, t('learn.collapse')))))
+      }
+
       // ---------- learning view ----------
       const learnView = !learn
         ? h('div', { className: 'vs-empty-hint' }, learnError || t('learn.loading'))
@@ -984,28 +1088,30 @@ window.__ModuleLoader__.load({
 
           h('section', { className: 'vs-learn-sec' },
             h('div', { className: 'vs-sec-title' }, t('learn.series')),
-            learn.series.map((group) => h('div', { key: group.id, className: 'vs-series-row' },
-              h('div', { className: 'vs-series-head' },
-                h('div', { className: 'vs-series-name' }, group.title + ' · ' + group.count),
-                h('div', { className: 'vs-series-blurb' }, group.blurb),
-                h('button', {
-                  type: 'button',
-                  className: 'vs-link-btn',
-                  onClick: () => { setSeriesSel(group.id); setQuery(''); setStillsOnly(false); setCategory(''); setView('studio') }
-                }, t('learn.viewAll') + ' · ' + group.count)),
-              h('div', { className: 'vs-series-picks' },
-                group.picks.map((pick) => h('button', {
-                  key: pick.id,
-                  type: 'button',
-                  className: 'vs-pick',
-                  title: pick.title,
-                  onClick: () => applyStyle(pick.id)
-                },
-                  h('div', { className: 'vs-pick-thumb' },
-                    pick.image
-                      ? h('img', { src: imageUrl(pick.id), alt: pick.title, loading: 'lazy' })
-                      : h('span', null, pick.entryId)),
-                  h('div', { className: 'vs-pick-title' }, pick.title)))))),
+            learn.series.map((group) => h('div', { key: group.id, className: 'vs-series-group' },
+              h('div', { className: 'vs-series-row' + (group.picks.some((p) => p.id === expandedPick) ? ' on' : '') },
+                h('div', { className: 'vs-series-head' },
+                  h('div', { className: 'vs-series-name' }, group.title + ' · ' + group.count),
+                  h('div', { className: 'vs-series-blurb' }, group.blurb),
+                  h('button', {
+                    type: 'button',
+                    className: 'vs-link-btn',
+                    onClick: () => { setSeriesSel(group.id); setQuery(''); setStillsOnly(false); setCategory(''); setView('studio') }
+                  }, t('learn.viewAll') + ' · ' + group.count)),
+                h('div', { className: 'vs-series-picks' },
+                  group.picks.map((pick) => h('button', {
+                    key: pick.id,
+                    type: 'button',
+                    className: 'vs-pick' + (expandedPick === pick.id ? ' on' : ''),
+                    title: pick.title,
+                    onClick: () => expandPick(pick.id)
+                  },
+                    h('div', { className: 'vs-pick-thumb' },
+                      pick.image
+                        ? h('img', { src: imageUrl(pick.id), alt: pick.title, loading: 'lazy' })
+                        : h('span', null, pick.entryId)),
+                    h('div', { className: 'vs-pick-title' }, pick.title))))),
+              group.picks.some((p) => p.id === expandedPick) ? pickDetailView(expandedPick) : null))),
 
           h('section', { className: 'vs-learn-sec' },
             h('div', { className: 'vs-sec-title' }, t('learn.examples')),
@@ -1070,7 +1176,7 @@ window.__ModuleLoader__.load({
                       className: 'vs-btn',
                       onClick: () => applyStyle(example.styleId)
                     }, t('learn.useStyle') + ' · ' + example.styleId)
-                    : null))))))
+                    : null)))))
 
       return h('div', { className: 'vs-root', ref: rootRef, style: boxHeight ? { height: boxHeight + 'px' } : undefined },
         h('style', null, CSS),
@@ -1151,7 +1257,7 @@ window.__ModuleLoader__.load({
                     onClick: () => setCategory(name)
                   }, name + ' ' + count)))
                 : null),
-              h('div', { className: 'vs-grid' },
+              h('div', { className: 'vs-grid' + (styleSel ? ' has-sel' : '') },
                 filtered.length === 0
                   ? h('div', { className: 'vs-empty-hint' }, t('empty.noMatch'))
                   : filtered.map((s) => h('button', {
@@ -1168,7 +1274,8 @@ window.__ModuleLoader__.load({
                       h('span', { className: 'vs-card-badge' }, s.name)),
                     h('div', { className: 'vs-card-body' },
                       h('div', { className: 'vs-card-title' }, s.title || s.name),
-                      s.head ? h('div', { className: 'vs-card-desc' }, s.head) : null))))),
+                      s.head ? h('div', { className: 'vs-card-desc' }, s.head) : null),
+                    styleSel === s.id ? h('span', { className: 'vs-card-check' }, '✓') : null)))),
 
             h('div', { className: 'vs-side' },
               h('div', { className: 'vs-tabs' },
