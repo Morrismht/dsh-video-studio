@@ -1,7 +1,7 @@
 # dsh-video-studio · 代码动画视频工作室
 
 DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts)
-的 **341 种代码动画风格提示词 + 193 张参考静帧** 搬进 DSH，挑风格、填内容、定参数、看预计耗时，
+的 **341 种代码动画风格提示词 + 333 张风格预览图** 搬进 DSH，挑风格、填内容、定参数、看预计耗时，
 一键把拼好的完整提示词提交给当前会话，让模型直接开始做代码动画视频。
 
 ## 三条核心需求怎么落地
@@ -86,6 +86,17 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
 Host 半（`index.js`）与浏览器半（`client.js`）通过 `connection.rpc` 通道 `/video-studio` 通信；
 channel 必须以 `/` 开头，否则运行时会报 `invalid or reserved RPC channel`。
 
+## 风格库预览图（`thumbs/`）
+
+`thumbs/` 里是 **333 张风格预览图**（1280×720 JPEG，按系列分子目录，约 26MB），不下载整个风格库也能在网页上直接看每种风格长什么样。
+
+- 341 种风格里 333 种有图：其中 **205 张**来自上游风格库的原创静帧（含上游 `catalog.json` 漏登记的 K1–K6、X1–X6 共 12 张），**128 张**是本仓库为上游没出图的风格补绘的（HTML/CSS/SVG 手写画面 + 无头 Chrome 截图，q=90）。
+- M14 / M15 / M16 / M17 / M26 / M35 / M39 / M40 这 8 条的风格模板在上游仓库里是空文件（无名称无描述），没有内容可画，所以没有预览图。
+- 文件名与风格库里的 `<编号>_<名称>.jpg` 完全一致；把这些图按系列覆盖到本地风格库 `assets/library/风格提示词/<系列>/` 下，插件图墙就会用它们当参考图。
+- 补绘图只用于「预览风格效果」，不是视频成品；要出片仍然按提示词现场渲染。
+
+> 素材出处与许可见 [`ATTRIBUTION.md`](ATTRIBUTION.md)：上游约定「全部免费、可自由转发，禁止包装成课程/付费 skills 售卖」。
+
 ## 前置条件
 
 风格库需要先放到本机（`git clone` 或下载 zip 解压）：
@@ -128,6 +139,7 @@ git clone https://github.com/XiaoyeCodes/code-animation-prompts
 | `client.js` | Client 半：侧边栏入口（第一格）+ 主面板（生成视图 / 参考库视图）+ 参数页 + 确认弹窗 + 头部切换按钮 |
 | `locale/zh.json` `locale/en.json` | 插件标题与描述 |
 | `icon.svg` | 场记板图标 |
+| `thumbs/` | 333 张风格预览图（1280×720 JPEG，按系列分子目录），网页上可直接浏览；覆盖到本地风格库同名路径即可给插件图墙用 |
 
 ## 排错
 

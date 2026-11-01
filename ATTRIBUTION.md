@@ -2,8 +2,8 @@
 
 ## 本仓库包含什么
 
-本仓库只有**插件代码**（`index.js` / `client.js` / `package.json` / `cordis.patch.yml` / `icon.svg` / `locale/*`）。
-**不包含**任何风格提示词、参考静帧或示例视频——这些都在上游仓库里，插件运行时从你本机读取。
+本仓库包含**插件代码**（`index.js` / `client.js` / `package.json` / `cordis.patch.yml` / `icon.svg` / `locale/*`），以及 `thumbs/` 下 **333 张风格预览图**（205 张来自上游原创静帧，128 张为本仓库补绘）。
+**不包含**风格提示词正文、示例视频与文档——这些仍在上游仓库，插件运行时从你本地读取。
 
 ## 上游素材来源（必须署名）
 
@@ -13,6 +13,8 @@
 | `示例\B6_光速穿梭·爆炸·重聚`（Opus 5.5 与 DeepSeek-V4.1-Flash 两版成片与截图） | 同上 | 同上 |
 | `示例\X7_英雄漫画_只给一句话` | 同上 | 同上 |
 | `docs\images\*` | 同上 | 同上 |
+| `thumbs/` 下 205 张预览图（上游原图，含 catalog 未登记的 12 张） | 同上游 [XiaoyeCodes/code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts) | 同上游约定：免费转发，禁止付费封装 |
+| `thumbs/` 下 128 张补绘预览图 | 本仓库用 HTML/CSS/SVG 手写画面 + 无头 Chrome 截图生成 | 与上游同样免费转发、禁止付费封装；可任意使用 |
 | L 系列（Lemo-Opuscar）原始素材 | 见上游 `assets\library\第三方许可\Lemo-Opuscar_LICENSE.txt` | MIT 类许可 |
 | V 系列（mg-styles-15）原始素材 | 见上游 `assets\library\第三方许可\mg-styles-15_LICENSE.txt` | MIT 类许可 |
 | X 系列（code-video）原始素材 | 见上游 `assets\library\第三方许可\code-video_LICENSE.txt` | MIT 类许可 |
@@ -33,9 +35,9 @@ B 站《【经验开源】Opus 5.5 做的代码动画，DeepSeek 也能做！341
 
 ## English summary
 
-This repository ships **plugin code only**. All 341 style prompts, 193 reference stills,
-the example films and docs live in [XiaoyeCodes/code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts)
-and are read from your local copy at runtime.
+This repository ships the **plugin code** plus a `thumbs/` folder with **333 preview stills**
+(205 of them are upstream stills, 128 were rendered by this repository for styles upstream did not illustrate).
+The 341 prompt texts, example films and docs stay in [XiaoyeCodes/code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts) and are read from your local copy at runtime.
 
 Upstream content is free to use and to pass along, but must not be repackaged into paid courses
 or paid skills. Third-party assets (Lemo-Opuscar, mg-styles-15, code-video) keep their own
