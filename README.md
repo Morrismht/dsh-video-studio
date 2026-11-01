@@ -8,7 +8,7 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
 
 | 需求 | 实现 |
 | --- | --- |
-| 1. 独立的「生成模式」，切换时更改主界面 | 两个入口：①**侧边栏最上面第一个图标**（品牌色实心场记板，`order: -100`，排在所有图标之前，鼠标悬停显示「代码动画工作室」）；②会话标题右侧的**场记板胶囊按钮（带文字）**。点任一入口，**主面板整块替换**为工作室（`layout.selectPanel`），顶栏「返回对话」再切回去。 |
+| 1. 独立的「生成模式」，切换时更改主界面 | 两个入口：①**侧边栏最上面第一个图标**（线条风格场记板，`order: -50`，排在所有面板图标之前，鼠标悬停显示「代码动画工作室」）；②会话标题右侧的**场记板胶囊按钮（带文字）**。点任一入口，**主面板整块替换**为工作室（`layout.selectPanel`），顶栏「返回对话」再切回去。 |
 | 2. 类型选择参考 + 提示词参考，选项尽量多 | 两个视图：**「生成」**视图 = 左侧 10 个系列（A–G 代码样片 / H 现成版式 / K 卡通画风 / L Lemo-Opuscar / M 动态风格 / O 奥斯卡 98 部 / R 参考学来的 / V mg-styles-15 / X code-video / Z 中国风）+ 中间图墙（可按名称/描述/适合场景/分类/标签搜索，按分类筛选，只看有参考图）+ 右侧风格详情（大图、分类/适合/长什么样/关键词、完整提示词模板可复制）；**「参考库」**视图 = 图文学习页（见下）。 |
 | 3. 生成前提醒视频参数 + 预计生成时间 | 右侧参数页常驻「生成前请确认：声音 · 比例 · 时长 · 分辨率」提示条，底部实时显示 `总计约 X ~ Y 分钟`（含渲染/声音/编码拆分）；点「生成」先弹出**确认弹窗**，列出全部参数 chip、三条智能警告（无声视频 / 长时长 + 高分辨率 / 未选风格），并预览最终提示词，确认后才提交。 |
 
@@ -72,7 +72,11 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
   "topic":"…", "script":"…", "params": { … } }
 { "action": "estimate","params": { … } }          估算耗时
 { "action": "learn" }                             参考库页的全部数据（系列/代表作/案例/分步指南）
+{ "action": "diag" }                              自检：Host 半 RPC 通道状态 + 浏览器半是否真的挂载
 ```
+
+Host 半（`index.js`）与浏览器半（`client.js`）通过 `connection.rpc` 通道 `/video-studio` 通信；
+channel 必须以 `/` 开头，否则运行时会报 `invalid or reserved RPC channel`。
 
 ## 前置条件
 
@@ -102,8 +106,9 @@ git clone https://github.com/XiaoyeCodes/code-animation-prompts
 ## 安装与重载
 
 1. 插件管理器 → 安装 bundle → 选本目录（`plugin_manager install_bundle`）；已装过则直接启用。
-2. 改过 `index.js` / `client.js` 后：先禁用再启用该条目（`set_plugin enabled=false` → `true`），
-   然后**刷新浏览器页面**，客户端才会加载新版本。
+2. 改过 `index.js` / `client.js` 后：先禁用再启用该条目（`set_plugin enabled=false` → `true`）。
+3. **然后必须完全退出并重启桌面端**——客户端插件的清单是在应用启动时生成并注入页面的，
+   `Ctrl+R` 只会重跑已加载的模块，**不会**发现新启用/新改动的客户端插件。
 
 ## 文件
 
@@ -111,7 +116,7 @@ git clone https://github.com/XiaoyeCodes/code-animation-prompts
 | --- | --- |
 | `package.json` | bundle manifest（入口 / 客户端 / 语言包 / 图标、cordis 补丁指针） |
 | `cordis.patch.yml` | 插入 `video-studio` 一行；可选 `config.libraryRoot` 指定风格库位置 |
-| `index.js` | Host 半：风格库索引（catalog.json → 目录扫描兜底）、提示词拼装、耗时估算、`/plugins/video-studio/image` 静帧路由、`/plugins/video-studio/asset` 案例素材路由、`video_studio_query` 工具（含 `learn`） |
+| `index.js` | Host 半：风格库索引（catalog.json → 目录扫描兜底）、提示词拼装、耗时估算、`/plugins/video-studio/image` 静帧路由、`/plugins/video-studio/asset` 案例素材路由、RPC 通道 `/video-studio`、`video_studio_query` 工具（含 `learn` / `diag`）、`CSS.supports` 启动守卫 |
 | `client.js` | Client 半：侧边栏入口（第一格）+ 主面板（生成视图 / 参考库视图）+ 参数页 + 确认弹窗 + 头部切换按钮 |
 | `locale/zh.json` `locale/en.json` | 插件标题与描述 |
 | `icon.svg` | 场记板图标 |
@@ -120,8 +125,12 @@ git clone https://github.com/XiaoyeCodes/code-animation-prompts
 
 - 显示「未找到本地风格库」：检查上面的目录是否存在，或点「重新检测」。
 - 缩略图空白：静帧缺失（341 个风格中 193 个有参考图），或路由 404；卡片仍可点。
-- 面板没变：确认插件条目是 `active`，并刷新页面。
+- 面板没变 / 侧边栏没有图标：确认插件条目是 `active`，然后**完全重启桌面端**（`Ctrl+R` 不够）。
+- 生成或参考库报 `invalid RPC target` / `invalid or reserved RPC channel`：说明 Host 半的 RPC 没挂上，
+  查 `video_studio_query { "action": "diag" }` 的 `hostState.rpcRegistered`；`clientMount.mounted: false`
+  表示浏览器半没跑起来（通常是没重启，或 `client.js` 构建失败——控制台会有 `[video-studio] client ...` 日志）。
 - 提交按钮报「没有找到当前会话」：先回到对话页并进入一个会话，再回工作室提交。
+- 想彻底关掉 CSS 守卫：`cordis.patch.yml` 里给该行加 `config: { cssShim: false }`。
 
 ## 关于「重启后打不开窗口」
 

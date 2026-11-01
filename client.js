@@ -5,7 +5,7 @@
 
 const MODULE_ID = '@local/dsh-video-studio'
 const PANEL_ID = 'video-studio'
-const CHANNEL = 'video-studio'
+const CHANNEL = '/video-studio'
 const NS = 'video-studio'
 const IMAGE_ROUTE = '/plugins/video-studio/image'
 
@@ -448,6 +448,7 @@ const CSS = `
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .vs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-label-primary,#111827);color:#fff;padding:8px 16px;border-radius:var(--dsw-radius-md,6px);font-size:12.5px;z-index:1300;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:70vw;}
+.vs-sidebar-icon{display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:0;color:inherit;}
 .vs-seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-2,#f3f4f6);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-seg button{border:none;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font-size:12px;font-family:inherit;padding:4px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
 .vs-seg button.on{background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-weight:600;}
@@ -500,6 +501,8 @@ const CSS = `
 window.__ModuleLoader__.load({
   id: MODULE_ID,
   factory(require) {
+    // Any throw here would fail this client entry at web boot; degrade instead.
+    try {
     const React = require('react')
     const { useState, useEffect, useMemo, useCallback } = React
     const h = React.createElement
@@ -542,22 +545,13 @@ window.__ModuleLoader__.load({
     }
 
     function SidebarIcon(props) {
-      const size = (props && props.size) || 20
-      const active = !!(props && props.active)
-      const box = Math.max(18, size)
+      // Match the shipped panel icons: a bare line glyph in the inherited colour,
+      // no chip, no fill, no shadow.
+      const size = (props && (props.size || props.width)) || 20
       return h('span', {
         title: props && props.label,
-        style: {
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: box, height: box, borderRadius: 7,
-          background: active
-            ? 'var(--dsw-alias-brand-primary,#4c78ff)'
-            : 'var(--dsw-alias-brand-primary-soft,rgba(76,120,255,.16))',
-          color: active ? '#fff' : 'var(--dsw-alias-brand-primary,#4c78ff)',
-          boxShadow: active ? '0 2px 8px rgba(76,120,255,.45)' : 'none',
-          transition: 'background .15s ease'
-        }
-      }, h(ClapperIcon, { size: Math.round(box * 0.64) }))
+        className: 'vs-sidebar-icon'
+      }, h(ClapperIcon, { size: Math.round(Math.max(14, size)) }))
     }
 
     function HeaderToggle({ openStudio, label }) {
@@ -1329,7 +1323,8 @@ window.__ModuleLoader__.load({
               { name: 'main', key: PANEL_ID, inject: () => ({ studio }) },
               StudioPanel)
             const stopIcon = ctx.slots.register(
-              { name: 'sidebar.panellist', id: PANEL_ID, order: -100, label: () => translate('panel.title'), locale: NS },
+              // Sit at the very top of the panel list, above every shipped entry.
+              { name: 'sidebar.panellist', id: PANEL_ID, order: -50, label: () => translate('panel.title'), locale: NS },
               SidebarIcon)
             const stopHeader = ctx.slots.inject('conversation.session.header.utilities', () =>
               ctx.slots.register(
@@ -1345,11 +1340,28 @@ window.__ModuleLoader__.load({
           }))
         return () => stopMain()
       }, MODULE_ID + ':slots')
+
+      // Heartbeat: proves to the host (and to the agent via video_studio_query
+      // action=diag) that this browser half really mounted and registered.
+      try {
+        Promise.resolve(rpc('diag', {
+          slots: ['main', 'sidebar.panellist', 'conversation.session.header.utilities'],
+          hasLocale: !!locale,
+          hasLayout: !!layout,
+          hasSessions: !!sessions,
+          hasSlots: !!(ctx.slots && typeof ctx.slots.register === 'function'),
+          locale: (navigator && navigator.language) || ''
+        })).catch(() => {})
+      } catch {}
       } catch (error) {
         console.error('[video-studio] client apply failed', error)
       }
     }
 
     return { inject, apply }
+    } catch (error) {
+      console.error('[video-studio] client module failed to build', error)
+      return { inject: [], apply() {} }
+    }
   }
 })

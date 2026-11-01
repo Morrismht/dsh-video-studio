@@ -10,9 +10,13 @@ import { homedir } from 'node:os'
 import { existsSync } from 'node:fs'
 
 export const name = '@local/dsh-video-studio'
-export const inject = ['tools']
+// `webServer` is declared at plugin level because the client<->host RPC bridge
+// resolves `ctx.webServer` from this fiber's context while validating requests;
+// without the declaration `connection.rpc.handle` throws
+// 'cannot get property "webServer" without inject'.
+export const inject = ['tools', 'webServer']
 
-const CHANNEL = 'video-studio'
+const CHANNEL = '/video-studio'
 /** Same-origin route the Client uses for `<img src>` so the 193 reference stills
  *  lazy-load in the browser instead of being shipped as base64 over RPC. */
 const IMAGE_ROUTE = '/plugins/video-studio/image'
@@ -892,6 +896,10 @@ const CSS_SUPPORTS_SHIM = '<script data-dsh-video-studio-css>(function(){try{var
 
 export function apply(ctx, config = {}) {
   const catalog = new Catalog(defaultLibraryRoot(config))
+  // Last heartbeat the browser half reported, so the host can prove whether the
+  // client bundle really mounted (a silent client failure looks identical to a
+  // user who simply cannot find the entry).
+  let clientDiag = null
 
   const buildComposed = async (styleId, topic, script, params, extra) => {
     let style = null
@@ -904,10 +912,101 @@ export function apply(ctx, config = {}) {
     return composePrompt({ style, styleId, topic, script, params, extra })
   }
 
-  // Client <-> Host RPC. Mirrors the shipped dsh-mnemon bridge:
-  // client: connection.rpc.call(CHANNEL, endpoint, payload, signal?)
-  // host:   connection.rpc.handle(CHANNEL, async (endpoint, payload, signal) => ({ok, value}|{ok:false, error:{message}}))
-  ctx.inject(['connection', 'webServer'], (webContext) => {
+  const hostState = { connection: 'unknown', webServer: 'unknown', rpcRegistered: false, errors: [] }
+  const noteError = (where, error) => {
+    hostState.errors.push(`${where}: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  // Client <-> Host RPC. The bridge is the same one the shipped dsh-mnemon bundle
+  // uses: the browser calls connection.rpc.call(CHANNEL, endpoint, payload) and the
+  // host answers through connection.rpc.handle(CHANNEL, handler). The channel must
+  // be registered even when the web server is unavailable, otherwise every call
+  // fails with 'invalid RPC target "video-studio/<endpoint>"'.
+  const registerRpc = (connection) => {
+    if (!connection) {
+      for (const pick of [
+        () => (typeof ctx.get === 'function' ? ctx.get('connection') : null),
+        () => ctx.connection,
+      ]) {
+        try {
+          const value = pick()
+          if (value) { connection = value; break }
+        } catch (error) { noteError('connection lookup', error) }
+      }
+    }
+    if (!connection) {
+      hostState.connection = 'missing'
+      return
+    }
+    if (typeof connection.rpc?.handle !== 'function') {
+      hostState.connection = 'no-rpc'
+      return
+    }
+    try {
+      connection.rpc.handle(CHANNEL, async (endpoint, payload = {}, signal) => {
+        try {
+          switch (endpoint) {
+            case 'probe':
+              return ok({ ...catalog.probe(), hostState })
+            case 'catalog':
+              return ok(await catalog.list(payload.force === true))
+            case 'learn':
+              return ok(await buildLearn(catalog))
+            case 'diag':
+              clientDiag = { at: Date.now(), ...(payload && typeof payload === 'object' ? payload : {}) }
+              return ok({ clientDiag, hostState })
+            case 'style':
+              return ok(await catalog.readStyle(payload.id))
+            case 'image':
+              return ok(await catalog.readImage(payload.id))
+            case 'estimate': {
+              const value = estimate(payload.params, payload.styleId)
+              return ok({
+                ...value,
+                text: `预计约 ${Math.round(value.low / 60)} ~ ${Math.round(value.high / 60)} 分钟`,
+                note: '估计值按本机 HTML/CSS/Canvas 渲染速度估算，实际耗时还取决于模型生成代码的速度与机器性能。'
+              })
+            }
+            case 'compose':
+              return ok(await buildComposed(payload.styleId, payload.topic, payload.script, payload.params, payload.extra))
+            default:
+              return fail(new Error(`video-studio: 未知接口 ${endpoint}`))
+          }
+        } catch (error) {
+          return fail(error)
+        }
+      })
+      hostState.rpcRegistered = true
+    } catch (error) {
+      noteError('rpc.handle', error)
+    }
+  }
+  // The RPC bridge dereferences `ctx.webServer` from the calling context, so the
+  // context handed to `rpc.handle` must carry an explicit webServer injection —
+  // this is the same trick the shipped dsh-mnemon bundle uses. Without it the call
+  // throws 'cannot get property "webServer" without inject'.
+  try {
+    ctx.inject(['connection', 'webServer'], (webContext) => {
+      let connection = null
+      try {
+        if (typeof webContext?.extend === 'function') {
+          connection = webContext.extend({ webServer: webContext.get('webServer') }).connection
+        }
+      } catch (error) { noteError('extend connection', error) }
+      if (!connection) {
+        try {
+          connection = webContext?.connection
+            || (typeof webContext?.get === 'function' ? webContext.get('connection') : null)
+        } catch (error) { noteError('inject connection', error) }
+      }
+      if (!connection) { hostState.connection = 'missing'; return }
+      hostState.connection = 'inject'
+      registerRpc(connection)
+    })
+  } catch (error) { noteError('ctx.inject(connection)', error) }
+
+  // HTTP routes for the reference stills and the example assets.
+  ctx.inject(['webServer'], (webContext) => {
     const lookup = (key) => {
       if (!webContext) return null
       if (typeof webContext.get === 'function') {
@@ -915,68 +1014,39 @@ export function apply(ctx, config = {}) {
       }
       return webContext[key] ?? null
     }
-    let connection = lookup('connection')
-    if (!connection && webContext && typeof webContext.extend === 'function') {
-      try { connection = webContext.extend({ webServer: lookup('webServer') }).connection } catch {}
-    }
+    try {
+      const webServer = lookup('webServer')
+      if (!webServer) { hostState.webServer = 'missing'; return }
+      hostState.webServer = 'ok'
 
-    // Reference stills for the picker: served over HTTP so <img> can lazy-load them.
-    const webServer = lookup('webServer')
-    if (webServer && typeof webServer.register === 'function') {
-      ctx.effect(() => webServer.register({
-        kind: 'exact',
-        path: IMAGE_ROUTE,
-        handler: (req, res) => serveImage(req, res, catalog)
-      }), 'video-studio: reference image route')
-      ctx.effect(() => webServer.register({
-        kind: 'exact',
-        path: ASSET_ROUTE,
-        handler: (req, res) => serveAsset(req, res, catalog)
-      }), 'video-studio: example asset route')
-    }
-
-    if (config.cssShim !== false && webServer && typeof webServer.tapIndex === 'function') {
-      ctx.effect(() => webServer.tapIndex((html) => {
-        try {
-          if (typeof html !== 'string' || html.includes('data-dsh-video-studio-css')) return html
-          return html.includes('</head>') ? html.replace('</head>', CSS_SUPPORTS_SHIM + '</head>') : html
-        } catch {
-          return html
-        }
-      }), 'video-studio: css.supports guard')
-    }
-
-    if (!connection || typeof connection.rpc?.handle !== 'function') return
-    connection.rpc.handle(CHANNEL, async (endpoint, payload = {}, signal) => {
-      try {
-        switch (endpoint) {
-          case 'probe':
-            return ok(catalog.probe())
-          case 'catalog':
-            return ok(await catalog.list(payload.force === true))
-          case 'learn':
-            return ok(await buildLearn(catalog))
-          case 'style':
-            return ok(await catalog.readStyle(payload.id))
-          case 'image':
-            return ok(await catalog.readImage(payload.id))
-          case 'estimate': {
-            const value = estimate(payload.params, payload.styleId)
-            return ok({
-              ...value,
-              text: `预计约 ${Math.round(value.low / 60)} ~ ${Math.round(value.high / 60)} 分钟`,
-              note: '估计值按本机 HTML/CSS/Canvas 渲染速度估算，实际耗时还取决于模型生成代码的速度与机器性能。'
-            })
-          }
-          case 'compose':
-            return ok(await buildComposed(payload.styleId, payload.topic, payload.script, payload.params, payload.extra))
-          default:
-            return fail(new Error(`video-studio: 未知接口 ${endpoint}`))
-        }
-      } catch (error) {
-        return fail(error)
+      if (typeof webServer.register === 'function') {
+        ctx.effect(() => webServer.register({
+          kind: 'exact',
+          path: IMAGE_ROUTE,
+          handler: (req, res) => serveImage(req, res, catalog)
+        }), 'video-studio: reference image route')
+        ctx.effect(() => webServer.register({
+          kind: 'exact',
+          path: ASSET_ROUTE,
+          handler: (req, res) => serveAsset(req, res, catalog)
+        }), 'video-studio: example asset route')
       }
-    })
+
+      if (config.cssShim !== false && typeof webServer.tapIndex === 'function') {
+        try {
+          ctx.effect(() => webServer.tapIndex((html) => {
+            try {
+              if (typeof html !== 'string' || html.includes('data-dsh-video-studio-css')) return html
+              return html.includes('</head>') ? html.replace('</head>', CSS_SUPPORTS_SHIM + '</head>') : html
+            } catch {
+              return html
+            }
+          }), 'video-studio: css.supports guard')
+        } catch (error) { noteError('tapIndex', error) }
+      }
+    } catch (error) {
+      noteError('webServer', error)
+    }
   })
 
   // Agent tool: the model can query the same library while generating.
@@ -991,8 +1061,8 @@ export function apply(ctx, config = {}) {
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'learn', 'read', 'compose', 'estimate'],
-          description: 'list=列出系列/风格；learn=参考库总览（怎么用+每个系列代表作+实测案例）；read=读取风格完整提示词；compose=拼装提示词；estimate=估算耗时'
+          enum: ['list', 'learn', 'read', 'compose', 'estimate', 'diag'],
+          description: 'list=列出系列/风格；learn=参考库总览（怎么用+每个系列代表作+实测案例）；read=读取风格完整提示词；compose=拼装提示词；estimate=估算耗时；diag=查看浏览器端是否已挂载（排错用）'
         },
         series: { type: 'string', description: '仅列出指定系列 ID（AG/M/K/Z/H/L/V/X/R/O，可选）' },
         styleId: { type: 'string', description: '风格 ID，形如 "AG/A1"、"M/M1" 或直接 "A1"（read/compose/estimate 需要）' },
@@ -1105,6 +1175,19 @@ export function apply(ctx, config = {}) {
             ...value,
             text: `预计约 ${Math.round(value.low / 60)} ~ ${Math.round(value.high / 60)} 分钟（动画渲染约 ${value.render} 秒，声音合成约 ${value.audio} 秒，编码约 ${value.encode} 秒）`
           }
+        }
+        case 'diag': {
+          const base = {
+            hostState,
+            clientMount: clientDiag
+              ? {
+                  mounted: true,
+                  reportedAt: new Date(clientDiag.at).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+                  ...clientDiag
+                }
+              : { mounted: false, hint: '浏览器端还没有向插件后端报到：页面没重新加载，或 client.js 没有执行。请刷新页面（Ctrl+R）。' }
+          }
+          return base
         }
         default:
           throw new Error(`未知 action：${args.action}`)
