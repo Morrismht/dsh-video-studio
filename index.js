@@ -841,11 +841,13 @@ function deliveryRules(p) {
 }
 
 /** Build the prompt handed to the conversation when the user hits "生成". */
-export function composePrompt({ style, styleId, topic, script, params, extra }) {
+export function composePrompt({ style, styleId, topic, script, params, extra, promptTemplate }) {
   const p = normalizeParams(params)
   const aspectLabel = ASPECT_LABELS[p.aspect]
   const [w, h] = ASPECT_SIZES[p.aspect] ?? ASPECT_SIZES['16:9']
   const out = []
+  // A template the user edited in the params page wins over the style's own block.
+  const tplOverride = typeof promptTemplate === 'string' ? promptTemplate.trim() : ''
   out.push('用代码制作一段"代码动画"视频。')
   out.push('')
   out.push('【内容主题】')
@@ -867,16 +869,31 @@ export function composePrompt({ style, styleId, topic, script, params, extra }) 
     if (style.description) out.push(`长什么样：${style.description}`)
     if (style.fit) out.push(`适合：${style.fit}`)
     if (Array.isArray(style.tags) && style.tags.length > 0) out.push(`关键词：${style.tags.join('、')}`)
-    if (style.promptBlock) {
+    const body = tplOverride !== '' ? tplOverride.slice(0, 12000) : (style.promptBlock ? style.promptBlock.slice(0, 12000) : '')
+    if (body !== '') {
       out.push('')
       out.push('【风格提示词（保留核心视觉特征，其余按内容自由发挥）】')
-      out.push(style.promptBlock.slice(0, 12000))
+      out.push(body)
       out.push('')
-      out.push('注：风格提示词里"只输出代码/不要解释"之类的措辞只针对该风格素材本身，一切以本提示词的交付要求为准；模板中剩余的 {{占位符}} 请按内容主题自行填写，不要保留花括号。')
+      out.push(
+        tplOverride !== ''
+          ? '注：以上风格提示词是用户在界面上手工编辑过的版本，优先级高于风格库原文；其中"只输出代码/不要解释"之类的措辞只针对该风格素材本身，一切以本提示词的交付要求为准；模板中剩余的 {{占位符}} 请按内容主题自行填写，不要保留花括号。'
+          : '注：风格提示词里"只输出代码/不要解释"之类的措辞只针对该风格素材本身，一切以本提示词的交付要求为准；模板中剩余的 {{占位符}} 请按内容主题自行填写，不要保留花括号。'
+      )
     }
   } else if (styleId) {
     out.push('')
     out.push(`【风格】${styleId}`)
+    if (tplOverride !== '') {
+      out.push('')
+      out.push('【风格提示词（用户自定义）】')
+      out.push(tplOverride.slice(0, 12000))
+    }
+  }
+  if (!style && !styleId && tplOverride !== '') {
+    out.push('')
+    out.push('【风格提示词（用户自定义模板）】')
+    out.push(tplOverride.slice(0, 12000))
   }
   out.push('')
   out.push('【视频参数】')
@@ -941,7 +958,7 @@ export function apply(ctx, config = {}) {
   // on every activation and on unmount can be read back as a timeline.
   const clientDiagHistory = []
 
-  const buildComposed = async (styleId, topic, script, params, extra) => {
+  const buildComposed = async (styleId, topic, script, params, extra, promptTemplate) => {
     let style = null
     if (styleId) {
       const found = await catalog.findStyle(styleId)
@@ -949,7 +966,7 @@ export function apply(ctx, config = {}) {
       if (!found.style) throw new Error(`未找到风格：${styleId}`)
       style = await catalog.readStyle(styleId)
     }
-    return composePrompt({ style, styleId, topic, script, params, extra })
+    return composePrompt({ style, styleId, topic, script, params, extra, promptTemplate })
   }
 
   const hostState = { connection: 'unknown', webServer: 'unknown', rpcRegistered: false, errors: [] }
@@ -1010,7 +1027,7 @@ export function apply(ctx, config = {}) {
               })
             }
             case 'compose':
-              return ok(await buildComposed(payload.styleId, payload.topic, payload.script, payload.params, payload.extra))
+              return ok(await buildComposed(payload.styleId, payload.topic, payload.script, payload.params, payload.extra, payload.promptTemplate))
             default:
               return fail(new Error(`video-studio: 未知接口 ${endpoint}`))
           }
@@ -1110,6 +1127,7 @@ export function apply(ctx, config = {}) {
         styleId: { type: 'string', description: '风格 ID，形如 "AG/A1"、"M/M1" 或直接 "A1"（read/compose/estimate 需要）' },
         topic: { type: 'string', description: '视频内容主题（compose 需要）' },
         script: { type: 'string', description: '口播文案或分镜脚本（可选）' },
+        promptTemplate: { type: 'string', description: '自定义提示词模板（可选）：给了就用它替换风格自带的模板正文' },
         extra: { type: 'string', description: '额外要求（可选，如品牌色、指定字体、必须出现的元素）' },
         params: {
           type: 'object',
@@ -1203,7 +1221,7 @@ export function apply(ctx, config = {}) {
           }
         }
         case 'compose': {
-          const composed = await buildComposed(args.styleId, args.topic, args.script, args.params, args.extra)
+          const composed = await buildComposed(args.styleId, args.topic, args.script, args.params, args.extra, args.promptTemplate)
           return {
             styleId: args.styleId ?? null,
             canvas: composed.canvas,

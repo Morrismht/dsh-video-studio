@@ -47,6 +47,14 @@ const DICT = {
     'params.script': '口播文案 / 分镜（可选）',
     'params.scriptPh': '留空则由 AI 按主题自由发挥',
     'params.extra': '额外要求（可选）',
+    'params.promptGroup': '提示词模板（可修改）',
+    'params.promptPh': '这里是从所选风格载入的提示词模板，可以直接改字、删段、加要求。',
+    'params.promptHint': '改这里会替换风格自带的模板；{{花括号}}占位符可以保留，生成时会按主题自动填。',
+    'params.promptReset': '恢复风格模板',
+    'params.promptClear': '清空（用风格原文）',
+    'params.chars': '字',
+    'confirm.promptEdit': '最终提示词（提交前还能改）',
+    'confirm.promptHint': '这一整段就是要发给对话的内容，可以直接在这里改完再提交。',
     'params.extraPh': '例如：主色 #E5432B、结尾出 Logo、右上角放二维码',
     'params.aspect': '视频比例',
     'params.duration': '视频时长',
@@ -172,6 +180,14 @@ const DICT = {
     'params.script': 'Script / storyboard (optional)',
     'params.scriptPh': 'Leave empty and let the AI improvise from the topic',
     'params.extra': 'Extra requirements (optional)',
+    'params.promptGroup': 'Prompt template (editable)',
+    'params.promptPh': 'The template loaded from the selected style — reword it, drop sections, add your own rules.',
+    'params.promptHint': 'Editing this replaces the style template; {{placeholders}} may stay and get filled from the topic.',
+    'params.promptReset': 'Restore style template',
+    'params.promptClear': 'Clear (use original)',
+    'params.chars': 'chars',
+    'confirm.promptEdit': 'Final prompt (still editable)',
+    'confirm.promptHint': 'This whole block is what gets sent to the conversation — tweak it before submitting.',
     'params.extraPh': 'e.g. accent #E5432B, logo at the end, QR code top-right',
     'params.aspect': 'Aspect ratio',
     'params.duration': 'Duration',
@@ -458,6 +474,8 @@ const CSS = `
 .vs-modal-body{flex:1;overflow:auto;padding:13px 16px;display:flex;flex-direction:column;gap:9px;}
 .vs-modal-params{display:flex;flex-wrap:wrap;gap:6px;}
 .vs-warn{background:var(--dsw-alias-brand-primary-soft,rgba(76,120,255,.1));border-left:3px solid var(--dsw-alias-brand-primary,#4c78ff);border-radius:var(--dsw-radius-sm,4px);padding:7px 10px;font-size:12px;color:var(--dsw-alias-label-secondary,#4b5563);}
+.vs-tpl{height:168px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:11.5px;line-height:1.55;white-space:pre-wrap;}
+.vs-modal-prompt-edit{width:100%;box-sizing:border-box;resize:vertical;min-height:180px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;}
 .vs-modal-prompt{background:var(--dsw-alias-bg-layer-2,#f9fafb);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);padding:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;line-height:1.55;}
 .vs-modal-foot{display:flex;gap:9px;justify-content:flex-end;padding:11px 16px;border-top:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
@@ -685,6 +703,10 @@ window.__ModuleLoader__.load({
       const [estimate, setEstimate] = useState(null)
       const [confirm, setConfirm] = useState(null)
       const [submitting, setSubmitting] = useState(false)
+      // Editable prompt template: seeded from the selected style, replaced by the
+      // user's edits, and sent to the Host composer as `promptTemplate`.
+      const [tplEdit, setTplEdit] = useState('')
+      const [tplTouched, setTplTouched] = useState(false)
       const [submitted, setSubmitted] = useState(false)
       const [toast, setToast] = useState(null)
       const [zoom, setZoom] = useState('')
@@ -808,7 +830,11 @@ window.__ModuleLoader__.load({
         ;(async () => {
           try {
             const d = await studio.rpc('style', { id: styleSel })
-            if (alive) setDetail(d)
+            if (alive) {
+              setDetail(d)
+              setTplEdit(d && typeof d.promptBlock === 'string' ? d.promptBlock : '')
+              setTplTouched(false)
+            }
           } catch (err) {
             if (alive) showToast(String(err && err.message ? err.message : err))
           }
@@ -930,7 +956,8 @@ window.__ModuleLoader__.load({
             topic: topic.trim(),
             script,
             extra,
-            params
+            params,
+            promptTemplate: tplEdit
           })
           setConfirm({ prompt: composed.prompt, composed })
         } catch (err) {
@@ -1069,6 +1096,33 @@ window.__ModuleLoader__.load({
         h(Select, { label: t('params.resolution'), value: params.resolution, onChange: (v) => setP('resolution', v), options: RESOLUTIONS.map((v) => ({ value: v, label: v })) }),
         h(Select, { label: t('params.fps'), value: params.fps, onChange: (v) => setP('fps', Number(v)), options: FPSS.map((v) => ({ value: v, label: v + ' fps' })) }),
         h(Select, { label: t('params.format'), value: params.format, onChange: (v) => setP('format', v), options: FORMATS.map((v) => ({ value: v, label: v.toUpperCase() })) }),
+
+        h('div', { className: 'vs-group-label' }, t('params.promptGroup')),
+        h('div', { className: 'vs-hint', style: { marginBottom: 6 } }, t('params.promptHint')),
+        h('textarea', {
+          className: 'vs-textarea vs-tpl',
+          value: tplEdit,
+          spellCheck: false,
+          placeholder: t('params.promptPh'),
+          onChange: (e) => { setTplEdit(e.target.value); setTplTouched(true) }
+        }),
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 } },
+          h('button', {
+            type: 'button',
+            className: 'vs-btn vs-btn-sm',
+            onClick: () => {
+              setTplEdit(detail && typeof detail.promptBlock === 'string' ? detail.promptBlock : '')
+              setTplTouched(false)
+            }
+          }, t('params.promptReset')),
+          h('button', {
+            type: 'button',
+            className: 'vs-btn vs-btn-sm',
+            onClick: () => { setTplEdit(''); setTplTouched(true) }
+          }, t('params.promptClear')),
+          h('span', { className: 'vs-hint', style: { marginLeft: 'auto' } },
+            String(tplEdit.trim().length) + ' ' + t('params.chars') +
+              (tplTouched ? ' · ' + t('params.promptGroup') : ''))),
 
         estimate
           ? h('div', { className: 'vs-est' },
@@ -1414,7 +1468,17 @@ window.__ModuleLoader__.load({
                   estimate ? h('span', { className: 'vs-tag', style: { fontWeight: 700 } }, estimateLine) : null),
                 warnings.map((w) => h('div', { key: w, className: 'vs-warn' }, w)),
                 h('div', { className: 'vs-label' }, t('style.prompt')),
-                h('div', { className: 'vs-modal-prompt' }, confirm.prompt)),
+                h('div', { className: 'vs-label' }, t('confirm.promptEdit')),
+                h('textarea', {
+                  className: 'vs-modal-prompt vs-modal-prompt-edit',
+                  value: confirm.prompt,
+                  spellCheck: false,
+                  onChange: (e) => {
+                    const next = e.target.value
+                    setConfirm((prev) => (prev ? { ...prev, prompt: next } : prev))
+                  }
+                }),
+                h('div', { className: 'vs-hint' }, t('confirm.promptHint'))),
               h('div', { className: 'vs-modal-foot' },
                 h('button', { type: 'button', className: 'vs-btn', onClick: () => setConfirm(null) }, t('confirm.cancel')),
                 h('button', { type: 'button', className: 'vs-btn', onClick: () => copyText(confirm.prompt) }, t('confirm.copy')),
