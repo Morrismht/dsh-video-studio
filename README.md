@@ -1,7 +1,7 @@
 # dsh-video-studio · 代码动画视频工作室
 
 DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://github.com/XiaoyeCodes/code-animation-prompts)
-的 **341 种代码动画风格提示词 + 333 张风格预览图** 搬进 DSH，挑风格、填内容、定参数、看预计耗时，
+的 **341 种代码动画风格提示词 + 333 张风格预览图** 搬进 DSH，挑风格、填内容、定参数，
 一键把拼好的完整提示词提交给当前会话，让模型直接开始做代码动画视频。
 
 ## 三条核心需求怎么落地
@@ -10,14 +10,14 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
 | --- | --- |
 | 1. 独立的「生成模式」，切换时更改主界面 | 两个入口：①**侧边栏最上面第一个图标**（线条风格场记板，`order: -50`，排在所有面板图标之前，鼠标悬停显示「代码动画工作室」）；②会话标题右侧的**场记板小图标按钮**（鼠标悬停时出现提示气泡）。点任一入口，**主面板整块替换**为工作室（`layout.selectPanel`），顶栏「返回对话」再切回去。 |
 | 2. 类型选择参考 + 提示词参考，选项尽量多 | 两个视图：**「生成」**视图 = 左侧 10 个系列（A–G 代码样片 / H 现成版式 / K 卡通画风 / L Lemo-Opuscar / M 动态风格 / O 奥斯卡 98 部 / R 参考学来的 / V mg-styles-15 / X code-video / Z 中国风）+ 中间图墙（可按名称/描述/适合场景/分类/标签搜索，按分类筛选，只看有参考图）+ 右侧风格详情（大图、分类/适合/长什么样/关键词、完整提示词模板可复制）；**「参考库」**视图 = 图文学习页（见下）。 |
-| 3. 生成前提醒视频参数 + 预计生成时间 | 右侧参数页常驻「生成前请确认：声音 · 比例 · 时长 · 分辨率」提示条，底部实时显示 `总计约 X ~ Y 分钟`（含渲染/声音/编码拆分）；点「生成」先弹出**确认弹窗**，列出全部参数 chip、三条智能警告（无声视频 / 长时长 + 高分辨率 / 未选风格），并预览最终提示词，确认后才提交。 |
+| 3. 生成前提醒视频参数 | 右侧参数页常驻「生成前请确认：声音 · 比例 · 时长 · 分辨率」提示条；点「生成」先弹出**确认弹窗**，列出全部参数 chip、两条智能警告（无声视频 / 未选风格），并预览最终提示词（可直接编辑），确认后才提交。 |
 
 ## 「参考库」学习页（怎么照着做一版）
 
 顶栏左侧的 **生成 / 参考库** 分段按钮切换。参考库页从上到下：
 
 1. **数据总览**：341 种风格 / 193 张参考静帧 / 10 个系列。
-2. **怎么用（5 步）**：挑风格 → 说清讲什么 → 定参数 → 看预计时间 → 生成；下面 4 条经验提示（不说声音多半没声音、写得越细越稳、`{{ }}` 要填、长片 + 高分辨率很慢）。
+2. **怎么用（5 步）**：挑风格 → 说清讲什么 → 定参数 → 生成；下面 3 条经验提示（不说声音多半没声音、写得越细越稳、`{{ }}` 要填）。
 3. **10 个系列，每类给代表作**：左边是系列名 + 数量 + 一句话定位，右边是 4–8 个手挑的代表风格缩略图（有静帧的显示真图），**点缩略图就在原地展开**该风格的大图与说明（不跳走），展开区底部「提示词参考 →」直接跳到生成页的提示词面板；每行末尾「看这一类全部 · N」跳到图墙并按该系列过滤，能看到该系列每一个风格。
 4. **两个真实成品案例**：
    - **B6 光速穿梭·爆炸·重聚**（同一份提示词，Opus 5.5 与 DeepSeek-V4.1-Flash 各出一版）——页面内可直接播放两个 mp4，看两张出图截图，展开「当时的提示词」看 4.7KB 原文；
@@ -56,19 +56,6 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
 **画面风格**：动画节奏（舒缓 / 适中 / 紧凑）、字体（系统默认 / 思源黑体 / 思源宋体 / 楷体 / 等宽）、
 品牌主色（取色器，可「跟随风格」清空）。
 
-## 预计耗时怎么算
-
-```
-单帧成本 perFrame = 0.22s（A–G 代码样片）/ 0.10s（其余系列，偏文字与图形）
-渲染 render  = 时长 × 帧率 × 分辨率系数 × 节奏系数 × perFrame
-声音 audio   = 无声音 0 / 口播 40 + 时长×1.2 / BGM 15 / 音效 10 / 口播+BGM 55 + 时长×1.2（再乘语速系数）
-编码 encode  = 固定小头
-总计 total   = setup 35 + render + audio + encode
-区间         = total × 0.8 ~ total × 1.3（给出"约 X ~ Y 分钟"）
-```
-
-实测：M/M1 + 9:16 + 20 秒 + 2K + 60fps + 紧凑 → 约 410 秒（区间 328–554 秒，1200 帧）。
-
 ## Agent 工具
 
 模型侧也能用同一套库：`video_studio_query`
@@ -78,7 +65,6 @@ DSH 插件「生成模式」：把 [XiaoyeCodes/code-animation-prompts](https://
 { "action": "read",   "styleId": "M/M1" }          读取风格详情 + 提示词模板
 { "action": "compose","styleId":"M/M1",           拼装完整提示词
   "topic":"…", "script":"…", "params": { … } }
-{ "action": "estimate","params": { … } }          估算耗时
 { "action": "learn" }                             参考库页的全部数据（系列/代表作/案例/分步指南）
 { "action": "diag" }                              自检：Host 半 RPC 通道状态 + 浏览器半是否真的挂载
 ```
@@ -135,7 +121,7 @@ git clone https://github.com/XiaoyeCodes/code-animation-prompts
 | --- | --- |
 | `package.json` | bundle manifest（入口 / 客户端 / 语言包 / 图标、cordis 补丁指针） |
 | `cordis.patch.yml` | 插入 `video-studio` 一行；可选 `config.libraryRoot` 指定风格库位置 |
-| `index.js` | Host 半：风格库索引（catalog.json → 目录扫描兜底）、提示词拼装、耗时估算、`/plugins/video-studio/image` 静帧路由、`/plugins/video-studio/asset` 案例素材路由、RPC 通道 `/video-studio`、`video_studio_query` 工具（含 `learn` / `diag`）、`CSS.supports` 启动守卫 |
+| `index.js` | Host 半：风格库索引（catalog.json → 目录扫描兜底）、提示词拼装、`/plugins/video-studio/image` 静帧路由、`/plugins/video-studio/asset` 案例素材路由、RPC 通道 `/video-studio`、`video_studio_query` 工具（含 `learn` / `diag`）、`CSS.supports` 启动守卫 |
 | `client.js` | Client 半：侧边栏入口（第一格）+ 主面板（生成视图 / 参考库视图）+ 参数页 + 确认弹窗 + 头部切换按钮 |
 | `locale/zh.json` `locale/en.json` | 插件标题与描述 |
 | `icon.svg` | 场记板图标 |
@@ -183,6 +169,9 @@ dsh-image-gen: import failed: CSS.supports is not a function
 另外，点「生成」后弹出的**确认框里的最终提示词也可以直接改**：那一段就是真正发给对话的内容，改完再点「确认并提交」。
 
 对应 Agent 工具参数：`video_studio_query { action: "compose", styleId, topic, promptTemplate }` —— `promptTemplate` 给了就替换风格自带模板正文。
+提示词编辑框在 v1.2.6 里加大过：参数页默认 360px 高、13.5px 等宽字体，确认弹窗里的最终提示词框 300px 起，
+长模板不用来回滚。
+
 ## 出处与许可（重要）
 
 本插件的**代码**（`index.js` / `client.js` / 其余 bundle 文件）为原创；本插件**不自带**任何风格提示词或参考图，

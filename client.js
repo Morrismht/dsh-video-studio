@@ -79,13 +79,6 @@ const DICT = {
     'params.basic': '基础',
     'params.audioGroup': '声音与字幕',
     'params.lookGroup': '画面风格',
-    'estimate.title': '预计生成时间',
-    'estimate.range': '总计约 {low} ~ {high} 分钟',
-    'estimate.render': '动画渲染 {render} 秒',
-    'estimate.audio': '声音合成 {audio} 秒',
-    'estimate.encode': '编码导出 {encode} 秒',
-    'estimate.note': '按本机 HTML/Canvas 渲染速度估算，实际取决于模型写代码的速度与机器性能。',
-    'estimate.pending': '选择风格并填好参数后显示预计时间',
     'generate': '生成视频',
     'generate.hint': '点击后先弹出参数确认，再提交到当前对话',
     'confirm.title': '生成前确认参数',
@@ -95,7 +88,6 @@ const DICT = {
     'confirm.cancel': '返回修改',
     'confirm.copied': '已复制到剪贴板',
     'confirm.warnAudio': '当前是无声视频：如果想成片带声音，请把「声音」改成口播或背景音乐。',
-    'confirm.warnLong': '时长超过 30 秒且分辨率较高，实际生成会明显更久。',
     'confirm.warnNoStyle': '还没选风格，AI 会自行设计画面。',
     'submit.submitting': '正在提交…',
     'submit.done': '已提交到当前对话，正在生成视频',
@@ -213,13 +205,6 @@ const DICT = {
     'params.basic': 'Basics',
     'params.audioGroup': 'Audio & subtitles',
     'params.lookGroup': 'Look & feel',
-    'estimate.title': 'Estimated generation time',
-    'estimate.range': 'About {low} ~ {high} minutes in total',
-    'estimate.render': 'Animation render {render}s',
-    'estimate.audio': 'Audio {audio}s',
-    'estimate.encode': 'Encode {encode}s',
-    'estimate.note': 'Estimate from local HTML/Canvas rendering speed; real time depends on the model and the machine.',
-    'estimate.pending': 'Pick a style and fill in the parameters to see the estimate',
     'generate': 'Generate video',
     'generate.hint': 'A confirmation dialog shows every parameter before it is submitted',
     'confirm.title': 'Confirm parameters before generating',
@@ -229,7 +214,6 @@ const DICT = {
     'confirm.cancel': 'Back to edit',
     'confirm.copied': 'Copied to clipboard',
     'confirm.warnAudio': 'This is a silent video: switch "Audio" to voice-over or music if you want sound.',
-    'confirm.warnLong': 'Over 30s at a high resolution will take noticeably longer.',
     'confirm.warnNoStyle': 'No style selected — the AI will design the visuals itself.',
     'submit.submitting': 'Submitting…',
     'submit.done': 'Submitted to the conversation — generating the video',
@@ -453,10 +437,6 @@ const CSS = `
 .vs-input:focus,.vs-select:focus,.vs-textarea:focus{outline:none;border-color:var(--dsw-alias-brand-primary,#4c78ff);}
 .vs-textarea{resize:vertical;min-height:52px;line-height:1.5;}
 .vs-hint{font-size:11px;color:var(--dsw-alias-label-caption,#929bad);}
-.vs-est{background:var(--dsw-alias-brand-primary-soft,rgba(76,120,255,.1));border:1px solid var(--dsw-alias-brand-primary,rgba(76,120,255,.5));border-radius:var(--dsw-radius-md,6px);padding:9px 10px;margin:10px 0;}
-.vs-est-title{font-weight:700;color:var(--dsw-alias-brand-primary,#4c78ff);font-size:12.5px;margin-bottom:3px;}
-.vs-est-row{font-size:11.5px;color:var(--dsw-alias-label-secondary,#4b5563);}
-.vs-est-note{font-size:10.5px;color:var(--dsw-alias-label-tertiary,#6b7280);margin-top:3px;line-height:1.45;}
 .vs-reminder{font-size:11.5px;color:var(--dsw-alias-label-secondary,#4b5563);background:var(--dsw-alias-bg-layer-2,#f9fafb);border:1px dashed var(--dsw-alias-border-l4,#d7dbe0);border-radius:var(--dsw-radius-md,6px);padding:7px 9px;margin-bottom:8px;}
 .vs-preview-img{width:100%;border-radius:var(--dsw-radius-md,6px);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);display:block;cursor:zoom-in;background:var(--dsw-alias-bg-skeleton,#eef1f7);}
 .vs-detail-title{font-size:14px;font-weight:700;margin-bottom:2px;word-break:break-word;}
@@ -476,9 +456,9 @@ const CSS = `
 .vs-modal-body{flex:1;overflow:auto;padding:13px 16px;display:flex;flex-direction:column;gap:9px;}
 .vs-modal-params{display:flex;flex-wrap:wrap;gap:6px;}
 .vs-warn{background:var(--dsw-alias-brand-primary-soft,rgba(76,120,255,.1));border-left:3px solid var(--dsw-alias-brand-primary,#4c78ff);border-radius:var(--dsw-radius-sm,4px);padding:7px 10px;font-size:12px;color:var(--dsw-alias-label-secondary,#4b5563);}
-.vs-tpl{height:168px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:11.5px;line-height:1.55;white-space:pre-wrap;}
-.vs-modal-prompt-edit{width:100%;box-sizing:border-box;resize:vertical;min-height:180px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;}
-.vs-modal-prompt{background:var(--dsw-alias-bg-layer-2,#f9fafb);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);padding:10px;font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;line-height:1.55;}
+.vs-tpl{height:360px;min-height:220px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;font-size:13.5px;line-height:1.7;white-space:pre-wrap;padding:9px 10px;}
+.vs-modal-prompt-edit{width:100%;box-sizing:border-box;resize:vertical;min-height:300px;font-size:13.5px;line-height:1.7;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;}
+.vs-modal-prompt{background:var(--dsw-alias-bg-layer-2,#f9fafb);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:var(--dsw-radius-md,6px);padding:10px;font-size:13px;white-space:pre-wrap;word-break:break-word;max-height:380px;overflow:auto;line-height:1.65;}
 .vs-modal-foot{display:flex;gap:9px;justify-content:flex-end;padding:11px 16px;border-top:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
@@ -702,7 +682,6 @@ window.__ModuleLoader__.load({
       const [topic, setTopic] = useState('')
       const [script, setScript] = useState('')
       const [extra, setExtra] = useState('')
-      const [estimate, setEstimate] = useState(null)
       const [confirm, setConfirm] = useState(null)
       const [submitting, setSubmitting] = useState(false)
       // Editable prompt template: seeded from the selected style, replaced by the
@@ -843,19 +822,6 @@ window.__ModuleLoader__.load({
         })()
         return () => { alive = false }
       }, [styleSel])
-
-      // live estimate (works even before a style is picked)
-      const [estKey, setEstKey] = useState('')
-      useEffect(() => {
-        const key = JSON.stringify(params)
-        if (key === estKey) return
-        const timer = window.setTimeout(() => {
-          studio.rpc('estimate', { params, styleId: styleSel })
-            .then((value) => { setEstimate(value); setEstKey(key) })
-            .catch(() => {})
-        }, 220)
-        return () => window.clearTimeout(timer)
-      }, [params, styleSel, estKey])
 
       const allStyles = useMemo(() => {
         if (!catalog || !Array.isArray(catalog.series)) return []
@@ -1000,10 +966,6 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const estimateLine = estimate
-        ? t('estimate.range').replace('{low}', Math.round(estimate.low / 60)).replace('{high}', Math.max(1, Math.round(estimate.high / 60)))
-        : ''
-
       // ---------- empty library ----------
       if (probe && !probe.found) {
         return h('div', { className: 'vs-root', ref: rootRef, style: boxHeight ? { height: boxHeight + 'px' } : undefined },
@@ -1035,7 +997,6 @@ window.__ModuleLoader__.load({
 
       const warnings = []
       if (params.audio === 'none') warnings.push(t('confirm.warnAudio'))
-      if (params.duration > 30 && (params.resolution === '2K' || params.resolution === '4K')) warnings.push(t('confirm.warnLong'))
       if (!styleSel) warnings.push(t('confirm.warnNoStyle'))
 
       const paramForm = h('div', null,
@@ -1125,16 +1086,6 @@ window.__ModuleLoader__.load({
           h('span', { className: 'vs-hint', style: { marginLeft: 'auto' } },
             String(tplEdit.trim().length) + ' ' + t('params.chars') +
               (tplTouched ? ' · ' + t('params.promptEdited') : ''))),
-
-        estimate
-          ? h('div', { className: 'vs-est' },
-            h('div', { className: 'vs-est-title' }, t('estimate.title')),
-            h('div', { className: 'vs-est-row', style: { fontWeight: 600 } }, estimateLine),
-            h('div', { className: 'vs-est-row' }, t('estimate.render').replace('{render}', estimate.render)),
-            hasVoice || params.audio === 'fx' ? h('div', { className: 'vs-est-row' }, t('estimate.audio').replace('{audio}', estimate.audio)) : null,
-            h('div', { className: 'vs-est-row' }, t('estimate.encode').replace('{encode}', estimate.encode)),
-            h('div', { className: 'vs-est-note' }, t('estimate.note')))
-          : h('div', { className: 'vs-est' }, h('div', { className: 'vs-est-note' }, t('estimate.pending'))),
 
         h('div', { className: 'vs-reminder' }, t('params.reminder')),
         h('button', {
@@ -1466,8 +1417,7 @@ window.__ModuleLoader__.load({
                   h('span', { className: 'vs-tag' }, t('subtitle.' + params.subtitle)),
                   h('span', { className: 'vs-tag' }, params.resolution + ' · ' + params.fps + 'fps · ' + params.format.toUpperCase()),
                   h('span', { className: 'vs-tag' }, t('params.pacing') + ' ' + t(PACING_KEYS[params.pacing])),
-                  styleSel ? h('span', { className: 'vs-tag' }, styleSel) : null,
-                  estimate ? h('span', { className: 'vs-tag', style: { fontWeight: 700 } }, estimateLine) : null),
+                  styleSel ? h('span', { className: 'vs-tag' }, styleSel) : null),
                 warnings.map((w) => h('div', { key: w, className: 'vs-warn' }, w)),
                 h('div', { className: 'vs-label' }, t('confirm.promptEdit')),
                 h('textarea', {

@@ -739,39 +739,6 @@ function normalizeParams(params) {
   }
 }
 
-export function estimate(params, styleId) {
-  const p = normalizeParams(params)
-  const seriesKey = String(styleId ?? '').split('/')[0] ?? ''
-  const codeHeavy = /^([A-G]|AG)/i.test(seriesKey) || /^[A-G]\d/i.test(String(styleId ?? ''))
-  const perFrame = codeHeavy ? 0.22 : 0.1
-  const pacingFactor = { 舒缓: 0.9, 适中: 1, 紧凑: 1.12 }[p.pacing] ?? 1
-  const resFactor = RESOLUTION_FACTOR[p.resolution] ?? 1
-  const render = p.duration * p.fps * perFrame * resFactor * pacingFactor
-  const voiceFactor = { 慢: 1.15, 正常: 1, 快: 0.92 }[p.voiceSpeed] ?? 1
-  const audioSeconds = {
-    none: 0,
-    voice: (40 + p.duration * 1.2) * voiceFactor,
-    bgm: 15,
-    fx: 10,
-    voice_bgm: (55 + p.duration * 1.2) * voiceFactor
-  }[p.audio] ?? 0
-  const setup = 35
-  const encode = 20 + (p.format === 'mp4' ? 12 : 0) + (resFactor > 1.5 ? 22 : 0)
-  const total = setup + render + audioSeconds + encode
-  const [w, h] = ASPECT_SIZES[p.aspect] ?? ASPECT_SIZES['16:9']
-  return {
-    render: Math.round(render),
-    audio: Math.round(audioSeconds),
-    encode: Math.round(encode),
-    setup,
-    total: Math.round(total),
-    low: Math.round(total * 0.8),
-    high: Math.round(total * 1.35),
-    frames: Math.round(p.duration * p.fps),
-    canvas: `${w}×${h}`
-  }
-}
-
 const AUDIO_INSTRUCTIONS = {
   none: [
     '无声音：只输出画面，音轨留空。不要擅自加配乐、旁白或音效，并在交付说明里写明"无声预览"。'
@@ -1018,14 +985,6 @@ export function apply(ctx, config = {}) {
               return ok(await catalog.readStyle(payload.id))
             case 'image':
               return ok(await catalog.readImage(payload.id))
-            case 'estimate': {
-              const value = estimate(payload.params, payload.styleId)
-              return ok({
-                ...value,
-                text: `预计约 ${Math.round(value.low / 60)} ~ ${Math.round(value.high / 60)} 分钟`,
-                note: '估计值按本机 HTML/CSS/Canvas 渲染速度估算，实际耗时还取决于模型生成代码的速度与机器性能。'
-              })
-            }
             case 'compose':
               return ok(await buildComposed(payload.styleId, payload.topic, payload.script, payload.params, payload.extra, payload.promptTemplate))
             default:
@@ -1113,18 +1072,18 @@ export function apply(ctx, config = {}) {
     name: 'video_studio_query',
     description:
       '查询本地"代码动画"风格库（来自 code-animation-prompts 仓库：341 种风格提示词、193 张参考静帧，分 10 个系列）。' +
-      'list=列出系列与风格；read=读取某个风格的完整提示词与元数据；compose=按风格+内容+视频参数拼装最终提示词；estimate=估算渲染耗时。' +
+      'list=列出系列与风格；read=读取某个风格的完整提示词与元数据；compose=按风格+内容+视频参数拼装最终提示词。' +
       '当用户想生成代码动画/风格化视频时先用它选风格，再按返回的提示词与实现要求用 HTML/Canvas 渲染并导出视频。',
     parameters: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['list', 'learn', 'read', 'compose', 'estimate', 'diag'],
-          description: 'list=列出系列/风格；learn=参考库总览（怎么用+每个系列代表作+实测案例）；read=读取风格完整提示词；compose=拼装提示词；estimate=估算耗时；diag=查看浏览器端是否已挂载（排错用）'
+          enum: ['list', 'learn', 'read', 'compose', 'diag'],
+          description: 'list=列出系列/风格；learn=参考库总览（怎么用+每个系列代表作+实测案例）；read=读取风格完整提示词；compose=拼装提示词；diag=查看浏览器端是否已挂载（排错用）'
         },
         series: { type: 'string', description: '仅列出指定系列 ID（AG/M/K/Z/H/L/V/X/R/O，可选）' },
-        styleId: { type: 'string', description: '风格 ID，形如 "AG/A1"、"M/M1" 或直接 "A1"（read/compose/estimate 需要）' },
+        styleId: { type: 'string', description: '风格 ID，形如 "AG/A1"、"M/M1" 或直接 "A1"（read/compose 需要）' },
         topic: { type: 'string', description: '视频内容主题（compose 需要）' },
         script: { type: 'string', description: '口播文案或分镜脚本（可选）' },
         promptTemplate: { type: 'string', description: '自定义提示词模板（可选）：给了就用它替换风格自带的模板正文' },
@@ -1227,13 +1186,6 @@ export function apply(ctx, config = {}) {
             canvas: composed.canvas,
             params: composed.params,
             prompt: composed.prompt
-          }
-        }
-        case 'estimate': {
-          const value = estimate(args.params, args.styleId)
-          return {
-            ...value,
-            text: `预计约 ${Math.round(value.low / 60)} ~ ${Math.round(value.high / 60)} 分钟（动画渲染约 ${value.render} 秒，声音合成约 ${value.audio} 秒，编码约 ${value.encode} 秒）`
           }
         }
         case 'diag': {
