@@ -1,0 +1,33 @@
+{
+  "name": "@local/dsh-video-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Video Studio: browse 341 code-animation style prompts, pick video parameters, compose the prompt and submit it to the conversation.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/en.json",
+    "locale/zh.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

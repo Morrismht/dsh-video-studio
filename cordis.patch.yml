@@ -1,0 +1,9 @@
+- insert:
+    - id: video-studio
+      name: '@local/dsh-video-studio'
+      # 风格库位置（可选）。不填时依次尝试：
+      #   1) 本 bundle 的同级目录  ../code-animation-prompts
+      #   2) 用户主目录  ~/Desktop/agent工作区/项目文件/代码动画插件/code-animation-prompts
+      # 换到别处时在这里写仓库根目录，例如：
+      # config:
+      #   libraryRoot: 'D:\ai\code-animation-prompts'
