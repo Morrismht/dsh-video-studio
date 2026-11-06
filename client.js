@@ -692,10 +692,14 @@ window.__ModuleLoader__.load({
       lineHeight: '18px',
       appearance: 'none'
     }
+    // React.Fragment is the intended wrapper; a display:contents span keeps the
+    // same layout if the module table ever ships a react without Fragment.
+    const HeaderShell = typeof React.Fragment === 'undefined' ? 'span' : React.Fragment
+    const HEADER_SHELL_STYLE = HeaderShell === 'span' ? { display: 'contents' } : undefined
     function HeaderToggle({ openStudio, label }) {
       // Icon only, the same shape as the shell's neighbouring header buttons
       // (28px ghost icon button + native title tooltip).
-      return h(React.Fragment, null,
+      return h(HeaderShell, { style: HEADER_SHELL_STYLE },
         h('style', { key: 'vs-header-css' }, HEADER_CSS),
         h('button', {
           key: 'vs-header-btn',
