@@ -463,8 +463,12 @@ const CSS = `
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .vs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-label-primary,#111827);color:#fff;padding:8px 16px;border-radius:var(--dsw-radius-md,6px);font-size:12.5px;z-index:1300;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:70vw;}
-.vs-header-btn{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;padding:0;margin:0;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer;font-family:inherit;line-height:0;}
-.vs-header-btn:hover{background:var(--dsw-alias-bg-layer-2,#f3f4f6);color:var(--dsw-alias-label-primary,#111827);}
+.vs-header-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;margin:0;border:none;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-primary,#111827);cursor:pointer;font:inherit;font-size:12px;line-height:18px;-webkit-appearance:none;appearance:none;}
+.vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}
+.vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.18));}
+.vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}
+.vs-header-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:-1px;}
+.vs-header-btn svg{display:block;}
 .vs-seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-2,#f3f4f6);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-seg button{border:none;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font-size:12px;font-family:inherit;padding:4px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
 .vs-seg button.on{background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-weight:600;}
@@ -653,16 +657,55 @@ window.__ModuleLoader__.load({
       h('rect', { key: 'body', x: 2.2, y: 6.3, width: 11.6, height: 6.3, rx: 1.2 }),
       h('path', { key: 'play', d: 'M6.9 8.1v3.2l2.9-1.6Z', fill: 'currentColor', stroke: 'none' }))
     }
+    // The header slot lives outside the studio panel, so it cannot rely on the panel's
+    // injected stylesheet: without its own rules the button falls back to the browser's
+    // default button chrome (opaque fill + hard border). These rules mirror the shell
+    // primitive "ghost + sm" icon button that the neighbouring header entries (context
+    // diagnostics, expand sidebar) use: 28x28, no border, transparent, interactive
+    // hover/active tokens, 14px glyph.
+    const HEADER_CSS = [
+      '.vs-header-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;margin:0;border:none;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-primary,#111827);cursor:pointer;font:inherit;font-size:12px;line-height:18px;-webkit-appearance:none;appearance:none;}',
+      '.vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}',
+      '.vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.18));}',
+      '.vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}',
+      '.vs-header-btn:focus{outline:none;}',
+      '.vs-header-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:-1px;}',
+      '.vs-header-btn svg{display:block;}'
+    ].join(String.fromCharCode(10))
+    const HEADER_BTN_STYLE = {
+      boxSizing: 'border-box',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      flex: 'none',
+      width: 28,
+      height: 28,
+      padding: 0,
+      margin: 0,
+      border: 'none',
+      borderRadius: 4,
+      background: 'transparent',
+      color: 'var(--dsw-alias-label-primary, #111827)',
+      cursor: 'pointer',
+      fontSize: 12,
+      lineHeight: '18px',
+      appearance: 'none'
+    }
     function HeaderToggle({ openStudio, label }) {
-      // Icon only — the shell's neighbours ("expand sidebar", "expand bottom panel")
-      // are the same pattern: a glyph plus the native title tooltip.
-      return h('button', {
-        type: 'button',
-        className: 'vs-header-btn',
-        title: label,
-        'aria-label': label,
-        onClick: () => openStudio && openStudio()
-      }, h(ClapperIcon, { size: 16 }))
+      // Icon only, the same shape as the shell's neighbouring header buttons
+      // (28px ghost icon button + native title tooltip).
+      return h(React.Fragment, null,
+        h('style', { key: 'vs-header-css' }, HEADER_CSS),
+        h('button', {
+          key: 'vs-header-btn',
+          type: 'button',
+          className: 'vs-header-btn',
+          style: HEADER_BTN_STYLE,
+          title: label,
+          'aria-label': label,
+          onClick: () => openStudio && openStudio()
+        }, h(ClapperIcon, { size: 14 })))
     }
 
     // ---------- studio panel ----------
