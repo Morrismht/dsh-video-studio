@@ -463,12 +463,13 @@ const CSS = `
 .vs-zoom{position:fixed;inset:0;background:rgba(9,12,20,.86);display:flex;align-items:center;justify-content:center;z-index:1200;cursor:zoom-out;padding:32px;box-sizing:border-box;}
 .vs-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 .vs-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-label-primary,#111827);color:#fff;padding:8px 16px;border-radius:var(--dsw-radius-md,6px);font-size:12.5px;z-index:1300;box-shadow:0 6px 20px rgba(0,0,0,.3);max-width:70vw;}
-.vs-header-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;margin:0;border:none;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-primary,#111827);cursor:pointer;font:inherit;font-size:12px;line-height:18px;-webkit-appearance:none;appearance:none;}
-.vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}
-.vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.18));}
-.vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}
-.vs-header-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:-1px;}
-.vs-header-btn svg{display:block;}
+    .vs-header-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;box-sizing:border-box;width:28px;height:28px;padding:0;margin:0;border:0;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-secondary,#6b7280);line-height:1;cursor:pointer;font:inherit;font-size:12px;-webkit-appearance:none;appearance:none;}
+    .vs-header-btn svg{display:block;width:16px;height:16px;}
+    .vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));}
+    .vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.2));}
+    .vs-header-btn:focus{outline:none;}
+    .vs-header-btn:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:1px;}
+    .vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}
 .vs-seg{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:999px;background:var(--dsw-alias-bg-layer-2,#f3f4f6);border:1px solid var(--dsw-alias-border-l2,#e5e7eb);}
 .vs-seg button{border:none;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font-size:12px;font-family:inherit;padding:4px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
 .vs-seg button.on{background:var(--dsw-alias-brand-primary,#4c78ff);color:#fff;font-weight:600;}
@@ -664,34 +665,14 @@ window.__ModuleLoader__.load({
     // diagnostics, expand sidebar) use: 28x28, no border, transparent, interactive
     // hover/active tokens, 14px glyph.
     const HEADER_CSS = [
-      '.vs-header-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;margin:0;border:none;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-primary,#111827);cursor:pointer;font:inherit;font-size:12px;line-height:18px;-webkit-appearance:none;appearance:none;}',
-      '.vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}',
-      '.vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.18));}',
-      '.vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}',
+      '.vs-header-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;box-sizing:border-box;width:28px;height:28px;padding:0;margin:0;border:0;border-radius:var(--dsw-radius-sm,4px);background:transparent;color:var(--dsw-alias-label-secondary,#6b7280);line-height:1;cursor:pointer;font:inherit;font-size:12px;-webkit-appearance:none;appearance:none;}',
+      '.vs-header-btn svg{display:block;width:16px;height:16px;}',
+      '.vs-header-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));}',
+      '.vs-header-btn:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active,rgba(127,127,127,.2));}',
       '.vs-header-btn:focus{outline:none;}',
-      '.vs-header-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:-1px;}',
-      '.vs-header-btn svg{display:block;}'
+      '.vs-header-btn:focus-visible{outline:2px solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c78ff));outline-offset:1px;}',
+      '.vs-header-btn:disabled{cursor:not-allowed;opacity:.4;}'
     ].join(String.fromCharCode(10))
-    const HEADER_BTN_STYLE = {
-      boxSizing: 'border-box',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4,
-      flex: 'none',
-      width: 28,
-      height: 28,
-      padding: 0,
-      margin: 0,
-      border: 'none',
-      borderRadius: 4,
-      background: 'transparent',
-      color: 'var(--dsw-alias-label-primary, #111827)',
-      cursor: 'pointer',
-      fontSize: 12,
-      lineHeight: '18px',
-      appearance: 'none'
-    }
     // React.Fragment is the intended wrapper; a display:contents span keeps the
     // same layout if the module table ever ships a react without Fragment.
     const HeaderShell = typeof React.Fragment === 'undefined' ? 'span' : React.Fragment
@@ -704,12 +685,12 @@ window.__ModuleLoader__.load({
         h('button', {
           key: 'vs-header-btn',
           type: 'button',
-          className: 'vs-header-btn',
-          style: HEADER_BTN_STYLE,
+          className: 'vs-header-btn hc2fJa_iconButton',
+          /* inline styles removed: they overrode the hover rule */
           title: label,
           'aria-label': label,
           onClick: () => openStudio && openStudio()
-        }, h(ClapperIcon, { size: 14 })))
+        }, h(ClapperIcon, { size: 16 })))
     }
 
     // ---------- studio panel ----------
